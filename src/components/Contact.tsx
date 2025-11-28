@@ -81,8 +81,8 @@ const Contact = () => {
                 <Mail size={32} strokeWidth={1.5} className="flex-shrink-0 mt-1" />
                 <div>
                   <h3 className="text-xl font-display mb-2 tracking-wide">Email</h3>
-                  <a href="mailto:contact@whitelineclub.tn" className="text-muted-foreground group-hover:text-background/90 hover:underline">
-                    contact@whitelineclub.tn
+                  <a href="mailto:contact@whitelineissig.me" className="text-muted-foreground group-hover:text-background/90 hover:underline">
+                    contact@whitelineissig.me
                   </a>
                 </div>
               </div>
