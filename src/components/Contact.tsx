@@ -106,7 +106,8 @@ const Contact = () => {
               <h3 className="text-2xl font-display mb-6 tracking-wide">Suivez-nous</h3>
               <div className="flex gap-4">
                 <a
-                  href="https://www.facebook.com/profile.php?id=61552405551868"
+                  href="https://www.facebook.com/profile.php?id=156324860887838"
+}"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-12 h-12 border-2 border-foreground flex items-center justify-center hover:bg-foreground hover:text-background transition-all duration-300"
@@ -115,7 +116,7 @@ const Contact = () => {
                   <Facebook size={24} strokeWidth={1.5} />
                 </a>
                 <a
-                  href="https://instagram.com"
+                  href="https://www.instagram.com/whiteline_issig/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-12 h-12 border-2 border-foreground flex items-center justify-center hover:bg-foreground hover:text-background transition-all duration-300"
