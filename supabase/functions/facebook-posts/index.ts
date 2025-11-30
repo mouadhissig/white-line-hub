@@ -12,7 +12,7 @@ serve(async (req) => {
 
   try {
     const accessToken = Deno.env.get('FACEBOOK_ACCESS_TOKEN');
-    const pageId = '61552405551868';
+    const pageId = '156324860887838';
 
     if (!accessToken) {
       throw new Error('Facebook access token not configured');
