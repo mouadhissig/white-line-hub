@@ -21,7 +21,7 @@ serve(async (req) => {
     console.log('Fetching Facebook page posts...');
 
     const response = await fetch(
-      `https://graph.facebook.com/v18.0/${pageId}/posts?fields=message,created_time,full_picture,permalink_url&limit=3&access_token=${accessToken}`
+      `https://graph.facebook.com/v24.0/${pageId}/posts?fields=message,created_time,full_picture,permalink_url&limit=3&access_token=${accessToken}`
     );
 
     if (!response.ok) {
