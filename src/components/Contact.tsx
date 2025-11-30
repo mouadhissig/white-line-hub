@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Mail, Phone, MapPin, Facebook, Instagram, Linkedin, Send } from "lucide-react";
+import { Mail, MapPin, Facebook, Instagram, Linkedin, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Contact = () => {
@@ -90,18 +90,6 @@ const Contact = () => {
 
             <div className="border-2 border-foreground p-8 bg-background hover:bg-foreground hover:text-background transition-all duration-300 group">
               <div className="flex items-start gap-4">
-                <Phone size={32} strokeWidth={1.5} className="flex-shrink-0 mt-1" />
-                <div>
-                  <h3 className="text-xl font-display mb-2 tracking-wide">Téléphone</h3>
-                  <a href="tel:+21612345678" className="text-muted-foreground group-hover:text-background/90 hover:underline">
-                    +216 12 345 678
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            <div className="border-2 border-foreground p-8 bg-background hover:bg-foreground hover:text-background transition-all duration-300 group">
-              <div className="flex items-start gap-4">
                 <MapPin size={32} strokeWidth={1.5} className="flex-shrink-0 mt-1" />
                 <div>
                   <h3 className="text-xl font-display mb-2 tracking-wide">Adresse</h3>
@@ -118,7 +106,7 @@ const Contact = () => {
               <h3 className="text-2xl font-display mb-6 tracking-wide">Suivez-nous</h3>
               <div className="flex gap-4">
                 <a
-                  href="https://facebook.com"
+                  href="https://www.facebook.com/profile.php?id=61552405551868"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-12 h-12 border-2 border-foreground flex items-center justify-center hover:bg-foreground hover:text-background transition-all duration-300"
