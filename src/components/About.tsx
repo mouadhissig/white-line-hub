@@ -122,13 +122,13 @@ const About = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatItem
             icon={<Users size={48} strokeWidth={1.5} />}
-            value={followers}
+            value={492}
             suffix="+"
             label="Followers"
           />
           <StatItem
             icon={<Award size={48} strokeWidth={1.5} />}
-            value={25}
+            value={3}
             suffix="+"
             label="Événements organisés"
           />
