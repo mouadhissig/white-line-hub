@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const accessToken = Deno.env.get('FACEBOOK_ACCESS_TOKEN');
+    const accessToken = 'EAAmlh8zZBZCc0BQIeZBrrKcxSlhZBBrBZAJSiA7VKUO7sRVPHML7R7VzMOgZAMXXdmpA6ucSgPnxAAYUM0mfAcXR9x5KWZByDsfCchH2TPthfooePpNjBRLgxzd04ZCsqKaq8vckcgwsUZCWISmKLcwCiCiLC1DoT7Dmisq5Ab5NYyCQ8QDHM9Jsfx2f3RP6XRAexxclvrwfllhZAP';
     const pageId = '61552405551868';
 
     if (!accessToken) {
@@ -21,7 +21,7 @@ serve(async (req) => {
     console.log('Fetching Facebook page followers...');
 
     const response = await fetch(
-      `https://graph.facebook.com/v18.0/${pageId}?fields=followers_count&access_token=${accessToken}`
+      `https://graph.facebook.com/v24.0/${pageId}?fields=followers_count&access_token=${accessToken}`
     );
 
     if (!response.ok) {
