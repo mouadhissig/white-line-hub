@@ -27,7 +27,7 @@ const Sponsors = () => {
   const sponsorSlots = Array.from({ length: 8 }, (_, i) => i);
 
   return (
-    <section id="sponsors" ref={sectionRef} className="py-24 px-4 sm:px-6 lg:px-8 bg-foreground text-background">
+    <section id="sponsors" ref={sectionRef} className="py-24 px-4 sm:px-6 lg:px-8 bg-foreground text-background overflow-hidden">
       <div className="max-w-7xl mx-auto">
         <div className={`text-center mb-16 ${isVisible ? "animate-slide-up" : "opacity-0"}`}>
           <h2 className="text-5xl sm:text-6xl font-display mb-6 tracking-wider">
@@ -39,23 +39,22 @@ const Sponsors = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {sponsorSlots.map((slot, index) => (
-            <div
-              key={slot}
-              className={`aspect-square border-2 border-background/20 flex items-center justify-center hover:border-background hover:bg-background/5 transition-all duration-300 group ${
-                isVisible ? "animate-scale-in" : "opacity-0"
-              }`}
-              style={{ animationDelay: `${index * 0.05}s` }}
-            >
-              <div className="text-center">
-                <Building2 size={48} className="mx-auto mb-2 text-background/30 group-hover:text-background/60 transition-colors" strokeWidth={1.5} />
-                <p className="text-sm text-background/50 group-hover:text-background/70 transition-colors uppercase tracking-wider">
-                  Sponsor {index + 1}
-                </p>
+        <div className="relative">
+          <div className="flex gap-8 animate-scroll-left">
+            {[...sponsorSlots, ...sponsorSlots].map((slot, index) => (
+              <div
+                key={index}
+                className="flex-shrink-0 w-48 h-48 border-2 border-background/20 flex items-center justify-center hover:border-background hover:bg-background/5 transition-all duration-300 group"
+              >
+                <div className="text-center">
+                  <Building2 size={48} className="mx-auto mb-2 text-background/30 group-hover:text-background/60 transition-colors" strokeWidth={1.5} />
+                  <p className="text-sm text-background/50 group-hover:text-background/70 transition-colors uppercase tracking-wider">
+                    Sponsor {(slot % 8) + 1}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         <div className={`text-center mt-12 ${isVisible ? "animate-slide-up" : "opacity-0"}`} style={{ animationDelay: "0.4s" }}>

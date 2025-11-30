@@ -168,4 +168,21 @@ All colors MUST be HSL.
   .animate-counter {
     animation: counter 1s ease-out forwards;
   }
+  /* Scrolling animation for sponsors */
+  @keyframes scroll-left {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+
+  .animate-scroll-left {
+    animation: scroll-left 30s linear infinite;
+  }
+
+  .animate-scroll-left:hover {
+    animation-play-state: paused;
+  }
 }

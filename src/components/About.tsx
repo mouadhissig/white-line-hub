@@ -95,9 +95,10 @@ const About = () => {
           </h2>
           <div className="w-24 h-1 bg-foreground mx-auto mb-8" />
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            White Line Club est une organisation étudiante dédiée à l'excellence en sciences infirmières. 
-            Nous travaillons pour promouvoir la profession infirmière, développer les compétences de nos membres, 
-            et contribuer au bien-être de notre communauté.
+            Le White Line Club est actuellement le seul club étudiant de l'Institut Supérieur des Sciences Infirmières de Gabès (ISSIG Gabès). Il constitue un espace dynamique qui encourage la créativité, l'engagement et l'esprit d'initiative parmi les étudiants.
+          </p>
+          <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed mt-4">
+            Le club organise une large variété d'activités alliant santé, sensibilisation, divertissement et développement personnel.
           </p>
         </div>
 
@@ -106,7 +107,7 @@ const About = () => {
             icon={<Users size={48} strokeWidth={1.5} />}
             value={150}
             suffix="+"
-            label="Membres actifs"
+            label="Followers"
           />
           <StatItem
             icon={<Award size={48} strokeWidth={1.5} />}
@@ -122,7 +123,7 @@ const About = () => {
           />
           <StatItem
             icon={<Target size={48} strokeWidth={1.5} />}
-            value={10}
+            value={5}
             suffix="+"
             label="Partenariats"
           />

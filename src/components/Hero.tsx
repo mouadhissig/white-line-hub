@@ -52,10 +52,6 @@ const Hero = () => {
           />
         </div>
 
-        <h1 className="text-5xl sm:text-6xl lg:text-7xl font-display text-white mb-6 tracking-wider animate-slide-up">
-          WHITE LINE CLUB
-        </h1>
-
         <p className="text-lg sm:text-xl text-white/80 mb-12 max-w-2xl mx-auto animate-slide-up" style={{ animationDelay: "0.2s" }}>
           L'Institut Supérieur de Sciences Infirmières Gabès
         </p>

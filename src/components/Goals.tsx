@@ -89,34 +89,24 @@ const Goals = () => {
 
   const goals = [
     {
-      icon: <BookOpen size={32} strokeWidth={1.5} />,
-      title: "Excellence Académique",
-      description: "Promouvoir l'excellence dans les études infirmières à travers des programmes de tutorat, des ressources pédagogiques et un soutien continu.",
-    },
-    {
-      icon: <Users size={32} strokeWidth={1.5} />,
-      title: "Développement Professionnel",
-      description: "Offrir des opportunités de formation continue, des ateliers pratiques et des conférences pour développer les compétences professionnelles.",
-    },
-    {
-      icon: <TrendingUp size={32} strokeWidth={1.5} />,
-      title: "Innovation en Santé",
-      description: "Encourager la recherche et l'innovation dans les pratiques infirmières modernes pour améliorer la qualité des soins.",
+      icon: <Lightbulb size={32} strokeWidth={1.5} />,
+      title: "Sensibilisation et Éducation Sanitaire",
+      description: "La mise en place de campagnes de sensibilisation et d'éducation sanitaire destinées aux étudiants et à la communauté.",
     },
     {
       icon: <Globe size={32} strokeWidth={1.5} />,
-      title: "Impact Communautaire",
-      description: "Servir la communauté locale à travers des campagnes de santé publique, des actions caritatives et des programmes de sensibilisation.",
+      title: "Participation aux Événements",
+      description: "La participation à des événements nationaux et internationaux liés à la santé.",
     },
     {
-      icon: <Lightbulb size={32} strokeWidth={1.5} />,
-      title: "Leadership Étudiant",
-      description: "Développer les compétences en leadership et créer une plateforme pour que les étudiants expriment leurs idées et initiatives.",
+      icon: <Users size={32} strokeWidth={1.5} />,
+      title: "Activités Ludiques et Récréatives",
+      description: "L'organisation d'activités ludiques et récréatives afin de renforcer la cohésion entre les étudiants.",
     },
     {
-      icon: <Sparkles size={32} strokeWidth={1.5} />,
-      title: "Réseau Professionnel",
-      description: "Créer un réseau solide avec les professionnels de santé, les institutions médicales et les anciens étudiants pour favoriser les opportunités.",
+      icon: <TrendingUp size={32} strokeWidth={1.5} />,
+      title: "Développement des Compétences",
+      description: "Le développement des compétences des membres à travers des ateliers portant sur la communication, le leadership, le travail en équipe et l'organisation.",
     },
   ];
 
