@@ -1,1 +1,7 @@
 project_id = "rmjonykhawkelzdykbzb"
+
+[functions.facebook-followers]
+verify_jwt = false
+
+[functions.facebook-posts]
+verify_jwt = false

@@ -1,15 +1,21 @@
 import { useEffect, useRef, useState } from "react";
-import { Trophy, Calendar, Stethoscope, GraduationCap, HeartPulse, Handshake } from "lucide-react";
+import { Calendar, ExternalLink } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+
+interface FacebookPost {
+  id: string;
+  message?: string;
+  created_time: string;
+  full_picture?: string;
+  permalink_url: string;
+}
 
 interface AchievementCardProps {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  date: string;
+  post: FacebookPost;
   delay?: number;
 }
 
-const AchievementCard = ({ icon, title, description, date, delay = 0 }: AchievementCardProps) => {
+const AchievementCard = ({ post, delay = 0 }: AchievementCardProps) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
 
@@ -32,32 +38,62 @@ const AchievementCard = ({ icon, title, description, date, delay = 0 }: Achievem
     return () => observer.disconnect();
   }, [delay]);
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('fr-FR', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  };
+
+  const truncateMessage = (message: string, maxLength: number = 200) => {
+    if (message.length <= maxLength) return message;
+    return message.substring(0, maxLength) + '...';
+  };
+
   return (
     <div
       ref={cardRef}
-      className={`group relative bg-background border-2 border-foreground p-8 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl ${
+      className={`group relative bg-background border-2 border-foreground transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl overflow-hidden ${
         isVisible ? "animate-scale-in" : "opacity-0"
       }`}
     >
       <div className="absolute top-0 left-0 w-full h-full bg-foreground transform origin-bottom scale-y-0 group-hover:scale-y-100 transition-transform duration-500" />
       
       <div className="relative z-10">
-        <div className="mb-6 text-foreground group-hover:text-background transition-colors">
-          {icon}
+        {post.full_picture && (
+          <div className="w-full h-64 overflow-hidden">
+            <img 
+              src={post.full_picture} 
+              alt="Facebook post" 
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            />
+          </div>
+        )}
+        
+        <div className="p-8">
+          <div className="flex items-center gap-2 mb-4 text-sm text-muted-foreground group-hover:text-background/80 transition-colors">
+            <Calendar size={16} />
+            <span>{formatDate(post.created_time)}</span>
+          </div>
+          
+          {post.message && (
+            <p className="text-muted-foreground group-hover:text-background/90 leading-relaxed mb-4 transition-colors">
+              {truncateMessage(post.message)}
+            </p>
+          )}
+          
+          <a
+            href={post.permalink_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-foreground group-hover:text-background font-medium transition-colors"
+          >
+            Voir sur Facebook
+            <ExternalLink size={16} />
+          </a>
         </div>
-        
-        <div className="flex items-center gap-2 mb-4 text-sm text-muted-foreground group-hover:text-background/80 transition-colors">
-          <Calendar size={16} />
-          <span>{date}</span>
-        </div>
-        
-        <h3 className="text-2xl font-display mb-4 tracking-wide group-hover:text-background transition-colors">
-          {title}
-        </h3>
-        
-        <p className="text-muted-foreground group-hover:text-background/90 leading-relaxed transition-colors">
-          {description}
-        </p>
       </div>
     </div>
   );
@@ -66,6 +102,8 @@ const AchievementCard = ({ icon, title, description, date, delay = 0 }: Achievem
 const Achievements = () => {
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [posts, setPosts] = useState<FacebookPost[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -86,44 +124,22 @@ const Achievements = () => {
     return () => observer.disconnect();
   }, []);
 
-  const achievements = [
-    {
-      icon: <Trophy size={48} strokeWidth={1.5} />,
-      title: "Journée Mondiale des Infirmiers",
-      description: "Organisation d'un événement majeur célébrant la profession infirmière avec conférences et ateliers pratiques.",
-      date: "Mai 2024",
-    },
-    {
-      icon: <Stethoscope size={48} strokeWidth={1.5} />,
-      title: "Campagne de Sensibilisation",
-      description: "Sensibilisation à l'hygiène et la prévention des maladies dans les établissements scolaires de Gabès.",
-      date: "Mars 2024",
-    },
-    {
-      icon: <GraduationCap size={48} strokeWidth={1.5} />,
-      title: "Formation Continue",
-      description: "Sessions de formation avancée en soins d'urgence et techniques innovantes pour nos membres.",
-      date: "Février 2024",
-    },
-    {
-      icon: <HeartPulse size={48} strokeWidth={1.5} />,
-      title: "Don de Sang",
-      description: "Organisation de plusieurs campagnes de don de sang en collaboration avec les autorités sanitaires locales.",
-      date: "Janvier 2024",
-    },
-    {
-      icon: <Handshake size={48} strokeWidth={1.5} />,
-      title: "Partenariat Hospitalier",
-      description: "Établissement de partenariats avec les hôpitaux régionaux pour stages et formations pratiques.",
-      date: "Décembre 2023",
-    },
-    {
-      icon: <Trophy size={48} strokeWidth={1.5} />,
-      title: "Prix d'Excellence",
-      description: "Réception du prix de la meilleure association étudiante en sciences de la santé de la région.",
-      date: "Novembre 2023",
-    },
-  ];
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('facebook-posts');
+        if (!error && data?.posts) {
+          setPosts(data.posts.slice(0, 3));
+        }
+      } catch (err) {
+        console.error('Error fetching Facebook posts:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPosts();
+  }, []);
 
   return (
     <section id="achievements" ref={sectionRef} className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/30">
@@ -134,19 +150,29 @@ const Achievements = () => {
           </h2>
           <div className="w-24 h-1 bg-foreground mx-auto mb-8" />
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            Découvrez les projets et événements qui ont marqué notre parcours et démontré notre engagement.
+            Découvrez nos dernières actualités et événements sur Facebook.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {achievements.map((achievement, index) => (
-            <AchievementCard
-              key={index}
-              {...achievement}
-              delay={index * 100}
-            />
-          ))}
-        </div>
+        {loading ? (
+          <div className="text-center text-muted-foreground">
+            Chargement des publications...
+          </div>
+        ) : posts.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {posts.map((post, index) => (
+              <AchievementCard
+                key={post.id}
+                post={post}
+                delay={index * 100}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center text-muted-foreground">
+            Aucune publication disponible pour le moment.
+          </div>
+        )}
       </div>
     </section>
   );
