@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Calendar, ExternalLink } from "lucide-react";
+import { Calendar, ExternalLink, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface FacebookPost {
@@ -40,16 +40,16 @@ const AchievementCard = ({ post, delay = 0 }: AchievementCardProps) => {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    return date.toLocaleDateString("fr-FR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
   const truncateMessage = (message: string, maxLength: number = 200) => {
     if (message.length <= maxLength) return message;
-    return message.substring(0, maxLength) + '...';
+    return message.substring(0, maxLength) + "...";
   };
 
   return (
@@ -60,30 +60,30 @@ const AchievementCard = ({ post, delay = 0 }: AchievementCardProps) => {
       }`}
     >
       <div className="absolute top-0 left-0 w-full h-full bg-foreground transform origin-bottom scale-y-0 group-hover:scale-y-100 transition-transform duration-500" />
-      
+
       <div className="relative z-10">
         {post.full_picture && (
           <div className="w-full h-64 overflow-hidden">
-            <img 
-              src={post.full_picture} 
-              alt="Facebook post" 
+            <img
+              src={post.full_picture}
+              alt="Facebook post"
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             />
           </div>
         )}
-        
+
         <div className="p-8">
           <div className="flex items-center gap-2 mb-4 text-sm text-muted-foreground group-hover:text-background/80 transition-colors">
             <Calendar size={16} />
             <span>{formatDate(post.created_time)}</span>
           </div>
-          
+
           {post.message && (
             <p className="text-muted-foreground group-hover:text-background/90 leading-relaxed mb-4 transition-colors">
               {truncateMessage(post.message)}
             </p>
           )}
-          
+
           <a
             href={post.permalink_url}
             target="_blank"
@@ -103,6 +103,7 @@ const Achievements = () => {
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [posts, setPosts] = useState<FacebookPost[]>([]);
+  const [followers, setFollowers] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -127,12 +128,13 @@ const Achievements = () => {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const { data, error } = await supabase.functions.invoke('facebook-posts');
-        if (!error && data?.posts) {
-          setPosts(data.posts.slice(0, 3));
+        const { data, error } = await supabase.functions.invoke("facebook-posts");
+        if (!error && data) {
+          if (data.posts) setPosts(data.posts);
+          if (data.followers) setFollowers(data.followers);
         }
       } catch (err) {
-        console.error('Error fetching Facebook posts:', err);
+        console.error("Error fetching Facebook posts:", err);
       } finally {
         setLoading(false);
       }
@@ -142,9 +144,15 @@ const Achievements = () => {
   }, []);
 
   return (
-    <section id="achievements" ref={sectionRef} className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/30">
+    <section
+      id="achievements"
+      ref={sectionRef}
+      className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/30"
+    >
       <div className="max-w-7xl mx-auto">
-        <div className={`text-center mb-16 ${isVisible ? "animate-slide-up" : "opacity-0"}`}>
+        <div
+          className={`text-center mb-16 ${isVisible ? "animate-slide-up" : "opacity-0"}`}
+        >
           <h2 className="text-5xl sm:text-6xl font-display mb-6 tracking-wider">
             NOS RÉALISATIONS
           </h2>
@@ -152,6 +160,12 @@ const Achievements = () => {
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
             Découvrez nos dernières actualités et événements sur Facebook.
           </p>
+          {followers > 0 && (
+            <div className="mt-4 flex justify-center items-center gap-2 text-muted-foreground">
+              <Users size={18} />
+              <span>{followers.toLocaleString("fr-FR")} abonnés</span>
+            </div>
+          )}
         </div>
 
         {loading ? (
@@ -161,11 +175,7 @@ const Achievements = () => {
         ) : posts.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {posts.map((post, index) => (
-              <AchievementCard
-                key={post.id}
-                post={post}
-                delay={index * 100}
-              />
+              <AchievementCard key={post.id} post={post} delay={index * 100} />
             ))}
           </div>
         ) : (
