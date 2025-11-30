@@ -12,7 +12,7 @@ serve(async (req) => {
 
   try {
     const accessToken = 'EAAmlh8zZBZCc0BQIeZBrrKcxSlhZBBrBZAJSiA7VKUO7sRVPHML7R7VzMOgZAMXXdmpA6ucSgPnxAAYUM0mfAcXR9x5KWZByDsfCchH2TPthfooePpNjBRLgxzd04ZCsqKaq8vckcgwsUZCWISmKLcwCiCiLC1DoT7Dmisq5Ab5NYyCQ8QDHM9Jsfx2f3RP6XRAexxclvrwfllhZAP';
-    const pageId = '61552405551868';
+    const pageId = '156324860887838';
 
     if (!accessToken) {
       throw new Error('Facebook access token not configured');
