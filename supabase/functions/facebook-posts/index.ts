@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const accessToken = 'EAAmlh8zZBZCc0BQIeZBrrKcxSlhZBBrBZAJSiA7VKUO7sRVPHML7R7VzMOgZAMXXdmpA6ucSgPnxAAYUM0mfAcXR9x5KWZByDsfCchH2TPthfooePpNjBRLgxzd04ZCsqKaq8vckcgwsUZCWISmKLcwCiCiLC1DoT7Dmisq5Ab5NYyCQ8QDHM9Jsfx2f3RP6XRAexxclvrwfllhZAP';
+    const accessToken = Deno.env.get('FACEBOOK_ACCESS_TOKEN');
     const pageId = '156324860887838';
 
     if (!accessToken) {
@@ -21,7 +21,7 @@ serve(async (req) => {
     console.log('Fetching Facebook page posts...');
 
     const response = await fetch(
-      `https://graph.facebook.com/v18.0/156324860887838/posts?fields=message,created_time,full_picture,permalink_url&limit=3&access_token=EAAmlh8zZBZCc0BQIeZBrrKcxSlhZBBrBZAJSiA7VKUO7sRVPHML7R7VzMOgZAMXXdmpA6ucSgPnxAAYUM0mfAcXR9x5KWZByDsfCchH2TPthfooePpNjBRLgxzd04ZCsqKaq8vckcgwsUZCWISmKLcwCiCiLC1DoT7Dmisq5Ab5NYyCQ8QDHM9Jsfx2f3RP6XRAexxclvrwfllhZAP`
+      `https://graph.facebook.com/v18.0/${pageId}/posts?fields=message,created_time,full_picture,permalink_url&limit=3&access_token=${accessToken}`
     );
 
     if (!response.ok) {
