@@ -107,7 +107,6 @@ const Contact = () => {
               <div className="flex gap-4">
                 <a
                   href="https://www.facebook.com/profile.php?id=156324860887838"
-}"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-12 h-12 border-2 border-foreground flex items-center justify-center hover:bg-foreground hover:text-background transition-all duration-300"
