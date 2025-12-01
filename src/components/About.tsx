@@ -20,21 +20,6 @@ const StatItem = ({ icon, value, label, suffix = "" }: StatItemProps) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting && !hasAnimated) {
             setHasAnimated(true);
-            
-            const duration = 2000;
-            const steps = 60;
-            const increment = value / steps;
-            let current = 0;
-
-            const timer = setInterval(() => {
-              current += increment;
-              if (current >= value) {
-                setCount(value);
-                clearInterval(timer);
-              } else {
-                setCount(Math.floor(current));
-              }
-            }, duration / steps);
           }
         });
       },
@@ -46,6 +31,27 @@ const StatItem = ({ icon, value, label, suffix = "" }: StatItemProps) => {
     }
 
     return () => observer.disconnect();
+  }, [hasAnimated]);
+
+  useEffect(() => {
+    if (!hasAnimated) return;
+
+    const duration = 2000;
+    const steps = 60;
+    const increment = value / steps;
+    let current = 0;
+
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= value) {
+        setCount(value);
+        clearInterval(timer);
+      } else {
+        setCount(Math.floor(current));
+      }
+    }, duration / steps);
+
+    return () => clearInterval(timer);
   }, [value, hasAnimated]);
 
   return (
@@ -67,7 +73,7 @@ const StatItem = ({ icon, value, label, suffix = "" }: StatItemProps) => {
 const About = () => {
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const [followers, setFollowers] = useState(150);
+  const [followers, setFollowers] = useState(0);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
