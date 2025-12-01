@@ -80,7 +80,7 @@ const Hero = () => {
             className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-white bg-transparent border-2 border-white rounded-none hover:bg-white hover:text-black transition-all duration-300 animate-slide-up"
             style={{ animationDelay: "0.5s" }}
           >
-            Contribuez
+            Répondre au sondage
             <svg
               className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform"
               fill="none"
