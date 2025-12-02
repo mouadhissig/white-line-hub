@@ -118,7 +118,7 @@ const About = () => {
           </h2>
           <div className="w-24 h-1 bg-foreground mx-auto mb-8" />
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            Le White Line Club est actuellement le seul club étudiant de l'Institut Supérieur des Sciences Infirmières de Gabès (ISSIG Gabès). Il constitue un espace dynamique qui encourage la créativité, l'engagement et l'esprit d'initiative parmi les étudiants.
+            Le White Line Club est actuellement le seul club étudiant de l'Institut Supérieur des Sciences Infirmières de Gabès (ISSI Gabès). Il constitue un espace dynamique qui encourage la créativité, l'engagement et l'esprit d'initiative parmi les étudiants.
           </p>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed mt-4">
             Le club organise une large variété d'activités alliant santé, sensibilisation, divertissement et développement personnel.
