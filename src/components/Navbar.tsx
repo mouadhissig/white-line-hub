@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
-import logo from "@/assets/logo.png";
-import issigWhite from "@/assets/issig-white.png";
+import logoBlack from "@/assets/logo-black.png";
+import logoWhite from "@/assets/logo-white.png";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -49,7 +49,7 @@ const Navbar = () => {
             className="flex items-center space-x-3 transition-transform hover:scale-105"
           >
             <img
-              src={isScrolled ? logo : issigWhite}
+              src={isScrolled ? logoBlack : logoWhite}
               alt="White Line Club Logo"
               className="h-12 w-auto"
             />

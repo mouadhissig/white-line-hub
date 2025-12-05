@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import issigWhite from "@/assets/issig-white.png";
+import logoWhite from "@/assets/logo-white.png";
 
 const Hero = () => {
   const shapesRef = useRef<HTMLDivElement>(null);
@@ -46,7 +46,7 @@ const Hero = () => {
       <div className="relative z-10 text-center px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
         <div className="animate-scale-in">
           <img
-            src={issigWhite}
+            src={logoWhite}
             alt="White Line Club - ISSIG"
             className="mx-auto mb-8 w-full max-w-md h-auto"
           />
