@@ -57,7 +57,7 @@ const Navbar = () => {
         {snowflakes.map((flake) => (
           <span
             key={flake.id}
-            className={`snowflake ${isScrolled ? 'text-primary/40' : 'text-white/60'}`}
+            className={`snowflake ${isScrolled ? 'text-foreground/50' : 'text-white/60'}`}
             style={{
               left: flake.left,
               animationDelay: flake.delay,
