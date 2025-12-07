@@ -76,9 +76,24 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
       },
     });
 
+    // Sanitize name to prevent email header injection
+    const sanitizedName = data.name.replace(/[\r\n]/g, '').substring(0, 100);
+    
+    // Escape HTML to prevent XSS
+    const escapeHtml = (text: string) => {
+      const map: { [key: string]: string } = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      };
+      return text.replace(/[&<>"']/g, (m) => map[m]);
+    };
+
     // Send email
     await transporter.sendMail({
-      from: `"${data.name}" <${smtpUser}>`,
+      from: `"${sanitizedName}" <${smtpUser}>`,
       to: smtpUser, // Send to the configured email
       replyTo: data.email,
       subject: `Contact Form: ${data.subject}`,
@@ -92,11 +107,11 @@ ${data.message}
       `.trim(),
       html: `
 <h2>New Contact Form Submission</h2>
-<p><strong>Name:</strong> ${data.name}</p>
-<p><strong>Email:</strong> ${data.email}</p>
-<p><strong>Subject:</strong> ${data.subject}</p>
+<p><strong>Name:</strong> ${escapeHtml(data.name)}</p>
+<p><strong>Email:</strong> ${escapeHtml(data.email)}</p>
+<p><strong>Subject:</strong> ${escapeHtml(data.subject)}</p>
 <p><strong>Message:</strong></p>
-<p>${data.message.replace(/\n/g, '<br>')}</p>
+<p>${escapeHtml(data.message).replace(/\n/g, '<br>')}</p>
       `.trim(),
     });
 
@@ -108,12 +123,14 @@ ${data.message}
       },
     };
   } catch (error) {
+    // Log detailed error server-side
     console.error('Error sending email:', error);
+    
+    // Return generic error message to client
     return {
       statusCode: 500,
       body: JSON.stringify({ 
-        error: 'Failed to send email',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        error: 'Failed to send email. Please try again later.'
       }),
       headers: {
         'Content-Type': 'application/json',
