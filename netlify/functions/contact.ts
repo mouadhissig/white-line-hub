@@ -33,13 +33,36 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
       };
     }
 
-    const data: ContactFormData = JSON.parse(event.body);
+    let data: ContactFormData;
+    try {
+      data = JSON.parse(event.body);
+    } catch (error) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Invalid JSON in request body' }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      };
+    }
 
     // Validate required fields
     if (!data.name || !data.email || !data.subject || !data.message) {
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'All fields are required' }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      };
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(data.email)) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: 'Invalid email format' }),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -77,7 +100,12 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
     });
 
     // Sanitize name to prevent email header injection
-    const sanitizedName = data.name.replace(/[\r\n]/g, '').substring(0, 100);
+    // Remove newlines, tabs, and other control characters, escape quotes and backslashes
+    const sanitizedName = data.name
+      .replace(/[\r\n\t\x00-\x1F\x7F]/g, '')
+      .replace(/[\\"]/g, '\\$&')
+      .trim()
+      .substring(0, 100);
     
     // Escape HTML to prevent XSS
     const escapeHtml = (text: string) => {
