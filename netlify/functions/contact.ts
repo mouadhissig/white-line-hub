@@ -10,8 +10,10 @@ interface ContactFormData {
 
 const handler: Handler = async (event: HandlerEvent, context: HandlerContext) => {
   // CORS headers for all responses
+  // In production, consider setting ALLOWED_ORIGIN environment variable to restrict origins
+  const allowedOrigin = process.env.ALLOWED_ORIGIN || '*';
   const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Headers': 'Content-Type',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Content-Type': 'application/json',
