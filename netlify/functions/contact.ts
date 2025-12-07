@@ -89,12 +89,7 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
 
     // Validate SMTP configuration
     if (!smtpHost || !smtpUser || !smtpPass) {
-      console.error('Missing SMTP configuration. Required environment variables: SMTP_HOST, SMTP_USER, SMTP_PASS');
-      console.error('Current values:', { 
-        smtpHost: smtpHost ? 'set' : 'missing', 
-        smtpUser: smtpUser ? 'set' : 'missing', 
-        smtpPass: smtpPass ? 'set' : 'missing' 
-      });
+      console.error('Missing SMTP configuration. Please ensure SMTP_HOST, SMTP_USER, and SMTP_PASS environment variables are configured.');
       return {
         statusCode: 500,
         body: JSON.stringify({ error: 'Server configuration error' }),
