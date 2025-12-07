@@ -52,25 +52,23 @@ const Navbar = () => {
           : "bg-transparent"
       }`}
     >
-      {/* Snow overlay - visible only when not scrolled */}
-      {!isScrolled && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {snowflakes.map((flake) => (
-            <span
-              key={flake.id}
-              className="snowflake"
-              style={{
-                left: flake.left,
-                animationDelay: flake.delay,
-                animationDuration: flake.duration,
-                fontSize: flake.size,
-              }}
-            >
-              ❄
-            </span>
-          ))}
-        </div>
-      )}
+      {/* Snow overlay - always visible */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {snowflakes.map((flake) => (
+          <span
+            key={flake.id}
+            className={`snowflake ${isScrolled ? 'text-primary/40' : 'text-white/60'}`}
+            style={{
+              left: flake.left,
+              animationDelay: flake.delay,
+              animationDuration: flake.duration,
+              fontSize: flake.size,
+            }}
+          >
+            ❄
+          </span>
+        ))}
+      </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="flex justify-between items-center h-20">
