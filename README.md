@@ -60,9 +60,48 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
+## Contact Form Email Configuration
+
+This project includes a serverless contact form that sends emails via SMTP using Netlify Functions.
+
+### Environment Variables
+
+To enable the contact form email functionality, you need to configure the following environment variables in your Netlify dashboard (Site settings > Environment variables):
+
+- `SMTP_HOST` - Your SMTP server hostname
+- `SMTP_PORT` - SMTP server port (typically `587` for TLS or `465` for SSL)
+- `SMTP_SECURE` - Set to `true` for SSL, `false` for TLS
+- `SMTP_USER` - Your SMTP username/email address
+- `SMTP_PASS` - Your SMTP password or app-specific password
+
+**Configuration for Zoho Mail (contact@whitelineissig.me):**
+```
+SMTP_HOST=smtp.zoho.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=contact@whitelineissig.me
+SMTP_PASS=your-zoho-password
+```
+
+**Note:** Use your regular Zoho Mail password, or for enhanced security, create an [App-Specific Password](https://www.zoho.com/mail/help/adminconsole/two-factor-authentication.html) in Zoho Mail settings.
+
+### Testing Locally
+
+To test the contact form locally with Netlify CLI:
+
+1. Install Netlify CLI: `npm install -g netlify-cli`
+2. Create a `.env` file in the project root with your SMTP configuration
+3. Run: `netlify dev`
+4. The contact form will be available at `http://localhost:8888`
+
 ## How can I deploy this project?
 
 Simply open [Lovable](https://lovable.dev/projects/fb159570-3f73-464b-a403-fb740ca87ee3) and click on Share -> Publish.
+
+Alternatively, you can deploy directly to Netlify:
+1. Connect your GitHub repository to Netlify
+2. Configure the environment variables in Netlify dashboard
+3. Deploy!
 
 ## Can I connect a custom domain to my Lovable project?
 
