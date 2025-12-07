@@ -200,7 +200,7 @@ All colors MUST be HSL.
 
   .snowflake {
     position: absolute;
-    color: white;
+    color: FFFAFA;
     font-size: 1em;
     top: -10px;
     animation: snowfall linear infinite;
