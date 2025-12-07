@@ -185,4 +185,25 @@ All colors MUST be HSL.
   .animate-scroll-left:hover {
     animation-play-state: paused;
   }
+
+  /* Snow falling animation */
+  @keyframes snowfall {
+    0% {
+      transform: translateY(-10px) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(100px) rotate(360deg);
+      opacity: 0;
+    }
+  }
+
+  .snowflake {
+    position: absolute;
+    color: white;
+    font-size: 1em;
+    top: -10px;
+    animation: snowfall linear infinite;
+    pointer-events: none;
+  }
 }

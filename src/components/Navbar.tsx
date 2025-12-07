@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Menu, X } from "lucide-react";
 import logoBlack from "@/assets/logo-black.png";
 import logoWhite from "@/assets/logo-white.png";
@@ -33,15 +33,46 @@ const Navbar = () => {
     { label: "Contact", id: "contact" },
   ];
 
+  // Generate snowflakes with stable positions
+  const snowflakes = useMemo(() => {
+    return Array.from({ length: 25 }, (_, i) => ({
+      id: i,
+      left: `${(i * 4) % 100}%`,
+      delay: `${(i * 0.3) % 3}s`,
+      duration: `${2 + (i % 3)}s`,
+      size: `${0.4 + (i % 3) * 0.2}em`,
+    }));
+  }, []);
+
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 overflow-hidden ${
         isScrolled
           ? "bg-background shadow-lg"
           : "bg-transparent"
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Snow overlay - visible only when not scrolled */}
+      {!isScrolled && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {snowflakes.map((flake) => (
+            <span
+              key={flake.id}
+              className="snowflake"
+              style={{
+                left: flake.left,
+                animationDelay: flake.delay,
+                animationDuration: flake.duration,
+                fontSize: flake.size,
+              }}
+            >
+              ❄
+            </span>
+          ))}
+        </div>
+      )}
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
           <button
