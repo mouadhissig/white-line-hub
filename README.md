@@ -68,22 +68,22 @@ This project includes a serverless contact form that sends emails via SMTP using
 
 To enable the contact form email functionality, you need to configure the following environment variables in your Netlify dashboard (Site settings > Environment variables):
 
-- `SMTP_HOST` - Your SMTP server hostname (e.g., `smtp.gmail.com`)
+- `SMTP_HOST` - Your SMTP server hostname
 - `SMTP_PORT` - SMTP server port (typically `587` for TLS or `465` for SSL)
-- `SMTP_SECURE` - Set to `true` for SSL, `false` for TLS (typically `false` for port 587)
+- `SMTP_SECURE` - Set to `true` for SSL, `false` for TLS
 - `SMTP_USER` - Your SMTP username/email address
 - `SMTP_PASS` - Your SMTP password or app-specific password
 
-**Example for Gmail:**
+**Configuration for Zoho Mail (contact@whitelineissig.me):**
 ```
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-specific-password
+SMTP_HOST=smtp.zoho.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=contact@whitelineissig.me
+SMTP_PASS=your-zoho-password
 ```
 
-**Note:** For Gmail, you'll need to generate an [App Password](https://support.google.com/accounts/answer/185833) instead of using your regular password.
+**Note:** Use your regular Zoho Mail password, or for enhanced security, create an [App-Specific Password](https://www.zoho.com/mail/help/adminconsole/two-factor-authentication.html) in Zoho Mail settings.
 
 ### Testing Locally
 
