@@ -5,12 +5,67 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Simple in-memory cache
+let cachedData: { posts: any[]; timestamp: number } | null = null;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
+
+// Simple rate limiting
+const requestCounts = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT = 30; // requests per window
+const RATE_WINDOW = 60 * 1000; // 1 minute window
+
+function getRateLimitKey(req: Request): string {
+  return req.headers.get('x-forwarded-for') || 
+         req.headers.get('cf-connecting-ip') || 
+         'unknown';
+}
+
+function isRateLimited(key: string): boolean {
+  const now = Date.now();
+  const record = requestCounts.get(key);
+  
+  if (!record || now > record.resetTime) {
+    requestCounts.set(key, { count: 1, resetTime: now + RATE_WINDOW });
+    return false;
+  }
+  
+  if (record.count >= RATE_LIMIT) {
+    return true;
+  }
+  
+  record.count++;
+  return false;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Check rate limit
+    const clientKey = getRateLimitKey(req);
+    if (isRateLimited(clientKey)) {
+      console.log('Rate limit exceeded for:', clientKey);
+      return new Response(
+        JSON.stringify({ error: 'Too many requests', posts: [] }),
+        { 
+          status: 429, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': '60' } 
+        }
+      );
+    }
+
+    // Return cached data if valid
+    const now = Date.now();
+    if (cachedData && (now - cachedData.timestamp) < CACHE_TTL) {
+      console.log('Returning cached posts data');
+      return new Response(
+        JSON.stringify({ posts: cachedData.posts }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const accessToken = Deno.env.get('FACEBOOK_ACCESS_TOKEN');
     const pageId = '156324860887838';
 
@@ -33,6 +88,9 @@ serve(async (req) => {
     const data = await response.json();
     console.log('Successfully fetched posts:', data.data?.length || 0, 'posts');
 
+    // Update cache
+    cachedData = { posts: data.data || [], timestamp: now };
+
     return new Response(
       JSON.stringify({ posts: data.data || [] }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -43,7 +101,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ error: errorMessage, posts: [] }),
       { 
-        status: 200, // Return 200 with empty posts
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );
