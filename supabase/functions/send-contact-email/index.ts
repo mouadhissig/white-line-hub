@@ -63,7 +63,7 @@ const handler = async (req: Request): Promise<Response> => {
     const smtpPort = 465;
     const smtpUser = "contact@whitelineissig.me";
 
-    // Sanitize inputs to prevent injection
+    // Sanitize inputs
     const sanitizedName = data.name
       .replace(/[\r\n\t\x00-\x1F\x7F]/g, "")
       .replace(/[\\"]/g, "\\$&")
@@ -101,11 +101,6 @@ ${data.message}
 <p>${escapeHtml(data.message).replace(/\n/g, "<br>")}</p>
     `.trim();
 
-    // Use SMTP via API (Zoho ZeptoMail API for transactional emails)
-    // Since Deno doesn't have native SMTP, we'll use Zoho's ZeptoMail API or construct raw SMTP
-    // For simplicity, let's use a base64 encoded auth and raw fetch to an SMTP relay endpoint
-    
-    // Alternative: Use raw SMTP connection via Deno
     const encoder = new TextEncoder();
     const decoder = new TextDecoder();
 
@@ -116,55 +111,110 @@ ${data.message}
       port: smtpPort,
     });
 
-    const readResponse = async (): Promise<string> => {
-      const buffer = new Uint8Array(1024);
-      const n = await conn.read(buffer);
-      return decoder.decode(buffer.subarray(0, n ?? 0));
+    // Read full response including multi-line responses
+    const readFullResponse = async (): Promise<string> => {
+      let fullResponse = "";
+      const buffer = new Uint8Array(4096);
+      
+      while (true) {
+        const n = await conn.read(buffer);
+        if (n === null) break;
+        
+        const chunk = decoder.decode(buffer.subarray(0, n));
+        fullResponse += chunk;
+        
+        // Check if we have a complete response (ends with \r\n and code followed by space)
+        const lines = fullResponse.trim().split("\r\n");
+        const lastLine = lines[lines.length - 1];
+        // Response is complete if last line has code followed by space (not hyphen)
+        if (lastLine.length >= 4 && lastLine[3] === " ") {
+          break;
+        }
+        // Also break on single 3-digit responses
+        if (lastLine.length >= 3 && /^\d{3}/.test(lastLine) && !lastLine.includes("-")) {
+          break;
+        }
+      }
+      
+      return fullResponse;
     };
 
     const sendCommand = async (command: string): Promise<string> => {
       await conn.write(encoder.encode(command + "\r\n"));
-      return await readResponse();
+      // Small delay to ensure response is ready
+      await new Promise(resolve => setTimeout(resolve, 100));
+      return await readFullResponse();
     };
 
     try {
       // Read initial greeting
-      const greeting = await readResponse();
-      console.log("SMTP Greeting:", greeting);
+      const greeting = await readFullResponse();
+      console.log("SMTP Greeting:", greeting.trim());
+
+      if (!greeting.startsWith("220")) {
+        throw new Error("Invalid SMTP greeting: " + greeting);
+      }
 
       // EHLO
       let response = await sendCommand(`EHLO whitelineissig.me`);
-      console.log("EHLO response:", response);
+      console.log("EHLO response:", response.trim());
+
+      if (!response.includes("250")) {
+        throw new Error("EHLO failed: " + response);
+      }
 
       // AUTH LOGIN
       response = await sendCommand("AUTH LOGIN");
-      console.log("AUTH LOGIN response:", response);
+      console.log("AUTH LOGIN response:", response.trim());
+
+      if (!response.startsWith("334")) {
+        throw new Error("AUTH LOGIN failed: " + response);
+      }
 
       // Send username (base64 encoded)
       response = await sendCommand(btoa(smtpUser));
-      console.log("Username response:", response);
+      console.log("Username sent, response:", response.trim());
+
+      if (!response.startsWith("334")) {
+        throw new Error("Username rejected: " + response);
+      }
 
       // Send password (base64 encoded)
       response = await sendCommand(btoa(zohoPassword));
-      console.log("Password response:", response.substring(0, 20) + "...");
+      console.log("Password sent, response code:", response.substring(0, 3));
 
       if (!response.startsWith("235")) {
-        throw new Error("Authentication failed: " + response);
+        // 535 = auth failed, 334 = still waiting (shouldn't happen)
+        throw new Error("Authentication failed. Please check your Zoho password or generate an App Password in Zoho Mail settings.");
       }
+
+      console.log("Authentication successful!");
 
       // MAIL FROM
       response = await sendCommand(`MAIL FROM:<${smtpUser}>`);
-      console.log("MAIL FROM response:", response);
+      console.log("MAIL FROM response:", response.trim());
 
-      // RCPT TO (send to ourselves)
+      if (!response.startsWith("250")) {
+        throw new Error("MAIL FROM failed: " + response);
+      }
+
+      // RCPT TO
       response = await sendCommand(`RCPT TO:<${smtpUser}>`);
-      console.log("RCPT TO response:", response);
+      console.log("RCPT TO response:", response.trim());
+
+      if (!response.startsWith("250")) {
+        throw new Error("RCPT TO failed: " + response);
+      }
 
       // DATA
       response = await sendCommand("DATA");
-      console.log("DATA response:", response);
+      console.log("DATA response:", response.trim());
 
-      // Construct email headers and body
+      if (!response.startsWith("354")) {
+        throw new Error("DATA failed: " + response);
+      }
+
+      // Construct email message
       const emailMessage = [
         `From: "${sanitizedName}" <${smtpUser}>`,
         `To: ${smtpUser}`,
@@ -184,15 +234,21 @@ ${data.message}
         emailHtml,
         ``,
         `--boundary123--`,
-        `.`,
       ].join("\r\n");
 
-      response = await sendCommand(emailMessage);
-      console.log("Message response:", response);
+      // Send email content and end with .
+      await conn.write(encoder.encode(emailMessage + "\r\n.\r\n"));
+      await new Promise(resolve => setTimeout(resolve, 200));
+      response = await readFullResponse();
+      console.log("Message sent, response:", response.trim());
+
+      if (!response.startsWith("250")) {
+        throw new Error("Message sending failed: " + response);
+      }
 
       // QUIT
       response = await sendCommand("QUIT");
-      console.log("QUIT response:", response);
+      console.log("QUIT response:", response.trim());
 
       conn.close();
 
@@ -203,13 +259,14 @@ ${data.message}
       });
     } catch (smtpError) {
       console.error("SMTP Error:", smtpError);
-      conn.close();
+      try { conn.close(); } catch {}
       throw smtpError;
     }
   } catch (error) {
     console.error("Error sending email:", error);
+    const errorMessage = error instanceof Error ? error.message : "Failed to send email";
     return new Response(
-      JSON.stringify({ error: "Failed to send email. Please try again later." }),
+      JSON.stringify({ error: errorMessage }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
