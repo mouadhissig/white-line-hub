@@ -49,7 +49,7 @@ const Contact = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/.netlify/functions/contact', {
+      const response = await fetch('https://rmjonykhawkelzdykbzb.supabase.co/functions/v1/send-contact-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
