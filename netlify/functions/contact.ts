@@ -9,13 +9,32 @@ interface ContactFormData {
 }
 
 const handler: Handler = async (event: HandlerEvent, context: HandlerContext) => {
+  // CORS headers for all responses
+  // In production, consider setting ALLOWED_ORIGIN environment variable to restrict origins
+  const allowedOrigin = process.env.ALLOWED_ORIGIN || '*';
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Content-Type': 'application/json',
+  };
+
+  // Handle preflight OPTIONS request
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 204,
+      headers: corsHeaders,
+      body: '',
+    };
+  }
+
   // Only allow POST requests
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
       body: JSON.stringify({ error: 'Method Not Allowed' }),
       headers: {
-        'Content-Type': 'application/json',
+        ...corsHeaders,
         'Allow': 'POST',
       },
     };
@@ -27,9 +46,7 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'Request body is required' }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: corsHeaders,
       };
     }
 
@@ -40,9 +57,7 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'Invalid JSON in request body' }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: corsHeaders,
       };
     }
 
@@ -51,9 +66,7 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'All fields are required' }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: corsHeaders,
       };
     }
 
@@ -63,9 +76,7 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'Invalid email format' }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: corsHeaders,
       };
     }
 
@@ -78,13 +89,11 @@ const handler: Handler = async (event: HandlerEvent, context: HandlerContext) =>
 
     // Validate SMTP configuration
     if (!smtpHost || !smtpUser || !smtpPass) {
-      console.error('Missing SMTP configuration');
+      console.error('Missing SMTP configuration. Please ensure SMTP_HOST, SMTP_USER, and SMTP_PASS environment variables are configured.');
       return {
         statusCode: 500,
         body: JSON.stringify({ error: 'Server configuration error' }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: corsHeaders,
       };
     }
 
@@ -146,13 +155,18 @@ ${data.message}
     return {
       statusCode: 200,
       body: JSON.stringify({ message: 'Email sent successfully' }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: corsHeaders,
     };
   } catch (error) {
     // Log detailed error server-side
     console.error('Error sending email:', error);
+    
+    // Log error details for debugging
+    if (error instanceof Error) {
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
     
     // Return generic error message to client
     return {
@@ -160,9 +174,7 @@ ${data.message}
       body: JSON.stringify({ 
         error: 'Failed to send email. Please try again later.'
       }),
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: corsHeaders,
     };
   }
 };
