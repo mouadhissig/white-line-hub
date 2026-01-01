@@ -86,23 +86,43 @@ serve(async (req) => {
 
     const pageData = await pageResponse.json();
 
-    // Fetch posts with likes
-    const postsResponse = await fetch(
-      `https://graph.facebook.com/v18.0/${pageId}/posts?fields=likes.summary(true)&limit=100&access_token=${accessToken}`
-    );
-
+    // Fetch ALL posts with reactions count (likes, love, etc.)
     let totalLikes = 0;
     let postsCount = 0;
+    let nextUrl = `https://graph.facebook.com/v18.0/${pageId}/posts?fields=reactions.summary(total_count)&limit=100&access_token=${accessToken}`;
 
-    if (postsResponse.ok) {
-      const postsData = await postsResponse.json();
-      postsCount = postsData.data?.length || 0;
+    // Paginate through all posts to get accurate total
+    let hasMore = true;
+    while (hasMore) {
+      const postsResponse: Response = await fetch(nextUrl);
       
-      // Sum up likes from all posts
-      for (const post of postsData.data || []) {
-        if (post.likes?.summary?.total_count) {
-          totalLikes += post.likes.summary.total_count;
+      if (!postsResponse.ok) {
+        console.error('Facebook API error fetching posts');
+        break;
+      }
+
+      const postsData: { data?: Array<{ reactions?: { summary?: { total_count?: number } } }>; paging?: { next?: string } } = await postsResponse.json();
+      const posts = postsData.data || [];
+      postsCount += posts.length;
+      
+      // Sum up reactions (likes) from all posts
+      for (const post of posts) {
+        if (post.reactions?.summary?.total_count) {
+          totalLikes += post.reactions.summary.total_count;
         }
+      }
+
+      // Check if there are more pages
+      if (postsData.paging?.next) {
+        nextUrl = postsData.paging.next;
+      } else {
+        hasMore = false;
+      }
+      
+      // Safety limit to prevent infinite loops
+      if (postsCount > 500) {
+        console.log('Reached safety limit of 500 posts');
+        break;
       }
     }
 
