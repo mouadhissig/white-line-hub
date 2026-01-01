@@ -206,4 +206,18 @@ All colors MUST be HSL.
     animation: snowfall linear infinite;
     pointer-events: none;
   }
+
+  /* Slow bounce animation for cute character */
+  @keyframes bounce-slow {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-15px);
+    }
+  }
+
+  .animate-bounce-slow {
+    animation: bounce-slow 3s ease-in-out infinite;
+  }
 }
