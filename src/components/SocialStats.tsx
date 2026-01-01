@@ -120,7 +120,7 @@ const SocialCard = ({ platform, stats, isVisible, delay }: SocialCardProps) => {
           <div>
             <h3 className="text-xl font-display tracking-wider">{config.name}</h3>
             <span className="text-sm text-muted-foreground group-hover:text-background/70 transition-colors duration-500">
-              @whitelineclub
+              @whiteline_issig
             </span>
           </div>
         </div>
