@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Users, Award, Heart, Target } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Award, Heart, Target } from "lucide-react";
 
 interface StatItemProps {
   icon: React.ReactNode;
@@ -73,7 +72,6 @@ const StatItem = ({ icon, value, label, suffix = "" }: StatItemProps) => {
 const About = () => {
   const sectionRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const [followers, setFollowers] = useState(0);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -94,21 +92,6 @@ const About = () => {
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    const fetchFollowers = async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke('facebook-followers');
-        if (!error && data?.followers) {
-          setFollowers(data.followers);
-        }
-      } catch (err) {
-        console.error('Error fetching followers:', err);
-      }
-    };
-
-    fetchFollowers();
-  }, []);
-
   return (
     <section id="about" ref={sectionRef} className="py-24 px-4 sm:px-6 lg:px-8 bg-background">
       <div className="max-w-7xl mx-auto">
@@ -125,13 +108,7 @@ const About = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatItem
-            icon={<Users size={48} strokeWidth={1.5} />}
-            value={followers}
-            suffix="+"
-            label="Followers"
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <StatItem
             icon={<Award size={48} strokeWidth={1.5} />}
             value={3}
