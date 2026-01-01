@@ -6,5 +6,11 @@ verify_jwt = false
 [functions.facebook-posts]
 verify_jwt = false
 
+[functions.facebook-stats]
+verify_jwt = false
+
+[functions.instagram-stats]
+verify_jwt = false
+
 [functions.send-contact-email]
 verify_jwt = false
