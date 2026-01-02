@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Calendar, ExternalLink } from "lucide-react";
+import { Calendar, ExternalLink, Heart, MessageCircle, Eye, Share2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface FacebookPost {
@@ -8,6 +8,19 @@ interface FacebookPost {
   created_time: string;
   full_picture?: string;
   permalink_url: string;
+  reactions?: {
+    summary: {
+      total_count: number;
+    };
+  };
+  comments?: {
+    summary: {
+      total_count: number;
+    };
+  };
+  shares?: {
+    count: number;
+  };
 }
 
 interface AchievementCardProps {
@@ -52,6 +65,10 @@ const AchievementCard = ({ post, delay = 0 }: AchievementCardProps) => {
     return message.substring(0, maxLength) + '...';
   };
 
+  const likesCount = post.reactions?.summary?.total_count || 0;
+  const commentsCount = post.comments?.summary?.total_count || 0;
+  const sharesCount = post.shares?.count || 0;
+
   return (
     <div
       ref={cardRef}
@@ -63,12 +80,27 @@ const AchievementCard = ({ post, delay = 0 }: AchievementCardProps) => {
       
       <div className="relative z-10">
         {post.full_picture && (
-          <div className="w-full h-64 overflow-hidden">
+          <div className="relative w-full h-64 overflow-hidden">
             <img 
               src={post.full_picture} 
               alt="Facebook post" 
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             />
+            {/* Stats overlay in bottom right */}
+            <div className="absolute bottom-3 right-3 flex items-center gap-3 bg-background/90 backdrop-blur-sm px-3 py-2 rounded-lg shadow-lg">
+              <div className="flex items-center gap-1 text-sm">
+                <Heart size={14} className="text-red-500" />
+                <span className="font-medium text-foreground">{likesCount}</span>
+              </div>
+              <div className="flex items-center gap-1 text-sm">
+                <MessageCircle size={14} className="text-blue-500" />
+                <span className="font-medium text-foreground">{commentsCount}</span>
+              </div>
+              <div className="flex items-center gap-1 text-sm">
+                <Share2 size={14} className="text-green-500" />
+                <span className="font-medium text-foreground">{sharesCount}</span>
+              </div>
+            </div>
           </div>
         )}
         
