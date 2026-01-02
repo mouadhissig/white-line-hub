@@ -80,9 +80,9 @@ serve(async (req) => {
     console.log('Fetching Instagram stats via RapidAPI...');
     console.log('Using host:', rapidApiHost);
 
-    // Fetch user info from RapidAPI Instagram Scraper
+    // Try the user_data endpoint (common format for instagram-scraper-stable-api)
     const userInfoResponse = await fetch(
-      `https://${rapidApiHost}/v1/info?username_or_id_or_url=${instagramUsername}`,
+      `https://${rapidApiHost}/user_data?username_or_url=${instagramUsername}`,
       {
         method: 'GET',
         headers: {
@@ -95,55 +95,49 @@ serve(async (req) => {
     if (!userInfoResponse.ok) {
       const errorText = await userInfoResponse.text();
       console.error('RapidAPI error:', userInfoResponse.status, errorText);
+      
+      // If 404, try alternative endpoint format
+      if (userInfoResponse.status === 404) {
+        console.log('Trying alternative endpoint format...');
+        
+        // Try /user endpoint
+        const altResponse = await fetch(
+          `https://${rapidApiHost}/user?username=${instagramUsername}`,
+          {
+            method: 'GET',
+            headers: {
+              'x-rapidapi-key': rapidApiKey,
+              'x-rapidapi-host': rapidApiHost,
+            },
+          }
+        );
+        
+        if (!altResponse.ok) {
+          const altErrorText = await altResponse.text();
+          console.error('Alternative endpoint also failed:', altResponse.status, altErrorText);
+          throw new Error(`RapidAPI error: ${altResponse.status} - ${altErrorText}`);
+        }
+        
+        const altData = await altResponse.json();
+        console.log('Alternative endpoint response:', JSON.stringify(altData).substring(0, 500));
+        
+        // Process alternative response
+        const stats = extractStats(altData);
+        cachedData = { stats, timestamp: now };
+        
+        return new Response(
+          JSON.stringify({ stats }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       throw new Error(`RapidAPI error: ${userInfoResponse.status}`);
     }
 
     const userData = await userInfoResponse.json();
     console.log('RapidAPI response:', JSON.stringify(userData).substring(0, 500));
 
-    // Extract stats from the response - structure may vary by API
-    let followers = 0;
-    let posts = 0;
-    let totalLikes = 0;
-
-    // Handle different API response structures
-    if (userData.data) {
-      // Some APIs return data in a nested structure
-      followers = userData.data.follower_count || userData.data.followers_count || userData.data.followers || 0;
-      posts = userData.data.media_count || userData.data.posts_count || userData.data.posts || 0;
-    } else {
-      // Direct response structure
-      followers = userData.follower_count || userData.followers_count || userData.followers || 0;
-      posts = userData.media_count || userData.posts_count || userData.posts || 0;
-    }
-
-    // Try to get total likes from recent posts if available
-    const mediaData = userData.data?.edge_owner_to_timeline_media?.edges || 
-                      userData.edge_owner_to_timeline_media?.edges ||
-                      userData.data?.posts ||
-                      userData.posts ||
-                      [];
-
-    for (const post of mediaData) {
-      const likeCount = post.node?.edge_liked_by?.count || 
-                        post.edge_liked_by?.count ||
-                        post.like_count ||
-                        post.likes_count ||
-                        0;
-      totalLikes += likeCount;
-    }
-
-    // If we couldn't get likes, estimate based on followers
-    if (totalLikes === 0 && followers > 0) {
-      totalLikes = Math.floor(followers * 0.05 * posts); // Rough estimate
-    }
-
-    const stats = {
-      followers,
-      posts,
-      totalLikes
-    };
-
+    const stats = extractStats(userData);
     console.log('Successfully fetched Instagram stats via RapidAPI:', stats);
 
     // Update cache
@@ -165,3 +159,54 @@ serve(async (req) => {
     );
   }
 });
+
+function extractStats(userData: any): { followers: number; posts: number; totalLikes: number } {
+  let followers = 0;
+  let posts = 0;
+  let totalLikes = 0;
+
+  // Handle different API response structures
+  const data = userData.data || userData;
+  
+  // Extract follower count (try multiple possible field names)
+  followers = data.follower_count || 
+              data.followers_count || 
+              data.followers || 
+              data.edge_followed_by?.count ||
+              data.user?.follower_count ||
+              0;
+  
+  // Extract post count
+  posts = data.media_count || 
+          data.posts_count || 
+          data.posts || 
+          data.edge_owner_to_timeline_media?.count ||
+          data.user?.media_count ||
+          0;
+
+  // Try to get total likes from recent posts if available
+  const mediaData = data.edge_owner_to_timeline_media?.edges || 
+                    data.posts ||
+                    data.media ||
+                    data.recent_posts ||
+                    [];
+
+  if (Array.isArray(mediaData)) {
+    for (const post of mediaData) {
+      const likeCount = post.node?.edge_liked_by?.count || 
+                        post.edge_liked_by?.count ||
+                        post.like_count ||
+                        post.likes_count ||
+                        post.likes ||
+                        0;
+      totalLikes += likeCount;
+    }
+  }
+
+  // If we couldn't get likes, estimate based on followers
+  if (totalLikes === 0 && followers > 0 && posts > 0) {
+    totalLikes = Math.floor(followers * 0.03 * Math.min(posts, 10)); // Rough estimate
+  }
+
+  return { followers, posts, totalLikes };
+}
