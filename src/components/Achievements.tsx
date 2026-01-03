@@ -86,21 +86,6 @@ const AchievementCard = ({ post, delay = 0 }: AchievementCardProps) => {
               alt="Facebook post" 
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             />
-            {/* Stats overlay in bottom right */}
-            <div className="absolute bottom-3 right-3 flex items-center gap-3 bg-background/90 backdrop-blur-sm px-3 py-2 rounded-lg shadow-lg">
-              <div className="flex items-center gap-1 text-sm">
-                <Heart size={14} className="text-red-500" />
-                <span className="font-medium text-foreground">{likesCount}</span>
-              </div>
-              <div className="flex items-center gap-1 text-sm">
-                <MessageCircle size={14} className="text-blue-500" />
-                <span className="font-medium text-foreground">{commentsCount}</span>
-              </div>
-              <div className="flex items-center gap-1 text-sm">
-                <Share2 size={14} className="text-green-500" />
-                <span className="font-medium text-foreground">{sharesCount}</span>
-              </div>
-            </div>
           </div>
         )}
         
@@ -116,15 +101,32 @@ const AchievementCard = ({ post, delay = 0 }: AchievementCardProps) => {
             </p>
           )}
           
-          <a
-            href={post.permalink_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-foreground group-hover:text-background font-medium transition-colors"
-          >
-            Voir sur Facebook
-            <ExternalLink size={16} />
-          </a>
+          <div className="flex items-center justify-between">
+            <a
+              href={post.permalink_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-foreground group-hover:text-background font-medium transition-colors"
+            >
+              Voir sur Facebook
+              <ExternalLink size={16} />
+            </a>
+            
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1 text-sm">
+                <Heart size={14} className="text-red-500" />
+                <span className="font-medium text-foreground group-hover:text-background transition-colors">{likesCount}</span>
+              </div>
+              <div className="flex items-center gap-1 text-sm">
+                <MessageCircle size={14} className="text-blue-500" />
+                <span className="font-medium text-foreground group-hover:text-background transition-colors">{commentsCount}</span>
+              </div>
+              <div className="flex items-center gap-1 text-sm">
+                <Share2 size={14} className="text-green-500" />
+                <span className="font-medium text-foreground group-hover:text-background transition-colors">{sharesCount}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
