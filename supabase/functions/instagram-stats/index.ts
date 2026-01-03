@@ -1,9 +1,23 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+// Allowed origins for CORS
+const allowedOrigins = [
+  'https://whitelineissig.me',
+  'https://www.whitelineissig.me',
+  'http://localhost:8080',
+  'http://localhost:5173',
+  'http://localhost:3000'
+];
+
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('Origin') || '';
+  const allowedOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Credentials': 'true'
+  };
+}
 
 // Simple in-memory cache
 let cachedData: { stats: any; timestamp: number } | null = null;
@@ -37,7 +51,12 @@ function isRateLimited(key: string): boolean {
   return false;
 }
 
+// Default fallback stats
+const fallbackStats = { followers: 100, posts: 15, totalLikes: 300 };
+
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -45,9 +64,9 @@ serve(async (req) => {
   try {
     const clientKey = getRateLimitKey(req);
     if (isRateLimited(clientKey)) {
-      console.log('Rate limit exceeded for:', clientKey);
+      console.log('Rate limit exceeded for client');
       return new Response(
-        JSON.stringify({ error: 'Too many requests', stats: { followers: 100, posts: 15, totalLikes: 300 } }),
+        JSON.stringify({ error: 'Too many requests', stats: fallbackStats }),
         { 
           status: 429, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': '60' } 
@@ -57,7 +76,7 @@ serve(async (req) => {
 
     const now = Date.now();
     if (cachedData && (now - cachedData.timestamp) < CACHE_TTL) {
-      console.log('Returning cached Instagram stats');
+      console.log('Returning cached stats');
       return new Response(
         JSON.stringify({ stats: cachedData.stats }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -69,16 +88,14 @@ serve(async (req) => {
     const instagramUsername = 'whiteline_issig'; // Your Instagram username
 
     if (!rapidApiKey || !rapidApiHost) {
-      console.log('RapidAPI credentials not configured, returning placeholder data');
-      const placeholderStats = { followers: 100, posts: 15, totalLikes: 300 };
+      console.log('API credentials not configured, returning placeholder data');
       return new Response(
-        JSON.stringify({ stats: placeholderStats, isPlaceholder: true }),
+        JSON.stringify({ stats: fallbackStats, isPlaceholder: true }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Fetching Instagram stats via RapidAPI...');
-    console.log('Using host:', rapidApiHost);
+    console.log('Fetching Instagram stats...');
 
     // Try the user_data endpoint (common format for instagram-scraper-stable-api)
     const userInfoResponse = await fetch(
@@ -93,8 +110,7 @@ serve(async (req) => {
     );
 
     if (!userInfoResponse.ok) {
-      const errorText = await userInfoResponse.text();
-      console.error('RapidAPI error:', userInfoResponse.status, errorText);
+      console.error('API error:', userInfoResponse.status);
       
       // If 404, try alternative endpoint format
       if (userInfoResponse.status === 404) {
@@ -113,13 +129,15 @@ serve(async (req) => {
         );
         
         if (!altResponse.ok) {
-          const altErrorText = await altResponse.text();
-          console.error('Alternative endpoint also failed:', altResponse.status, altErrorText);
-          throw new Error(`RapidAPI error: ${altResponse.status} - ${altErrorText}`);
+          console.error('Alternative endpoint also failed:', altResponse.status);
+          return new Response(
+            JSON.stringify({ stats: fallbackStats }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
         
         const altData = await altResponse.json();
-        console.log('Alternative endpoint response:', JSON.stringify(altData).substring(0, 500));
+        console.log('Alternative endpoint succeeded');
         
         // Process alternative response
         const stats = extractStats(altData);
@@ -131,14 +149,16 @@ serve(async (req) => {
         );
       }
       
-      throw new Error(`RapidAPI error: ${userInfoResponse.status}`);
+      return new Response(
+        JSON.stringify({ stats: fallbackStats }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const userData = await userInfoResponse.json();
-    console.log('RapidAPI response:', JSON.stringify(userData).substring(0, 500));
+    console.log('Successfully fetched stats');
 
     const stats = extractStats(userData);
-    console.log('Successfully fetched Instagram stats via RapidAPI:', stats);
 
     // Update cache
     cachedData = { stats, timestamp: now };
@@ -148,10 +168,9 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error fetching Instagram stats:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error fetching stats:', error);
     return new Response(
-      JSON.stringify({ error: errorMessage, stats: { followers: 100, posts: 15, totalLikes: 300 } }),
+      JSON.stringify({ stats: fallbackStats }),
       { 
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

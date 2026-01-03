@@ -1,9 +1,23 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+// Allowed origins for CORS
+const allowedOrigins = [
+  'https://whitelineissig.me',
+  'https://www.whitelineissig.me',
+  'http://localhost:8080',
+  'http://localhost:5173',
+  'http://localhost:3000'
+];
+
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('Origin') || '';
+  const allowedOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Credentials': 'true'
+  };
+}
 
 // Simple in-memory cache
 let cachedData: { stats: any; timestamp: number } | null = null;
@@ -37,7 +51,12 @@ function isRateLimited(key: string): boolean {
   return false;
 }
 
+// Default fallback stats
+const fallbackStats = { followers: 150, posts: 10, totalLikes: 500 };
+
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -45,9 +64,9 @@ serve(async (req) => {
   try {
     const clientKey = getRateLimitKey(req);
     if (isRateLimited(clientKey)) {
-      console.log('Rate limit exceeded for:', clientKey);
+      console.log('Rate limit exceeded for client');
       return new Response(
-        JSON.stringify({ error: 'Too many requests', stats: { followers: 150, posts: 10, totalLikes: 500 } }),
+        JSON.stringify({ error: 'Too many requests', stats: fallbackStats }),
         { 
           status: 429, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': '60' } 
@@ -57,7 +76,7 @@ serve(async (req) => {
 
     const now = Date.now();
     if (cachedData && (now - cachedData.timestamp) < CACHE_TTL) {
-      console.log('Returning cached Facebook stats');
+      console.log('Returning cached stats');
       return new Response(
         JSON.stringify({ stats: cachedData.stats }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -68,10 +87,14 @@ serve(async (req) => {
     const pageId = '156324860887838';
 
     if (!accessToken) {
-      throw new Error('Facebook access token not configured');
+      console.error('Access token not configured');
+      return new Response(
+        JSON.stringify({ stats: fallbackStats }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    console.log('Fetching Facebook page stats...');
+    console.log('Fetching page stats...');
 
     // Fetch page info with followers
     const pageResponse = await fetch(
@@ -79,9 +102,11 @@ serve(async (req) => {
     );
 
     if (!pageResponse.ok) {
-      const error = await pageResponse.text();
-      console.error('Facebook API error (page):', error);
-      throw new Error(`Facebook API error: ${pageResponse.status}`);
+      console.error('API error fetching page data:', pageResponse.status);
+      return new Response(
+        JSON.stringify({ stats: fallbackStats }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const pageData = await pageResponse.json();
@@ -97,7 +122,7 @@ serve(async (req) => {
       const postsResponse: Response = await fetch(nextUrl);
       
       if (!postsResponse.ok) {
-        console.error('Facebook API error fetching posts');
+        console.error('API error fetching posts');
         break;
       }
 
@@ -132,7 +157,7 @@ serve(async (req) => {
       totalLikes: totalLikes
     };
 
-    console.log('Successfully fetched Facebook stats:', stats);
+    console.log('Successfully fetched stats');
 
     // Update cache
     cachedData = { stats, timestamp: now };
@@ -142,10 +167,9 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error fetching Facebook stats:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error fetching stats:', error);
     return new Response(
-      JSON.stringify({ error: errorMessage, stats: { followers: 150, posts: 10, totalLikes: 500 } }),
+      JSON.stringify({ stats: fallbackStats }),
       { 
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

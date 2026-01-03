@@ -1,9 +1,23 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// Allowed origins for CORS
+const allowedOrigins = [
+  'https://whitelineissig.me',
+  'https://www.whitelineissig.me',
+  'http://localhost:8080',
+  'http://localhost:5173',
+  'http://localhost:3000'
+];
+
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('Origin') || '';
+  const allowedOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Credentials": "true"
+  };
+}
 
 interface ContactFormData {
   name: string;
@@ -12,7 +26,15 @@ interface ContactFormData {
   message: string;
 }
 
+// Input validation limits
+const MAX_NAME_LENGTH = 100;
+const MAX_EMAIL_LENGTH = 255;
+const MAX_SUBJECT_LENGTH = 200;
+const MAX_MESSAGE_LENGTH = 5000;
+
 const handler = async (req: Request): Promise<Response> => {
+  const corsHeaders = getCorsHeaders(req);
+
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -27,7 +49,7 @@ const handler = async (req: Request): Promise<Response> => {
 
   try {
     const data: ContactFormData = await req.json();
-    console.log("Received contact form submission:", { name: data.name, email: data.email, subject: data.subject });
+    console.log("Received contact form submission:", { name: data.name?.substring(0, 20), email: data.email?.substring(0, 30) });
 
     // Validate required fields
     if (!data.name || !data.email || !data.subject || !data.message) {
@@ -38,10 +60,43 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
+    // Validate input lengths
+    if (typeof data.name !== 'string' || data.name.length > MAX_NAME_LENGTH) {
+      console.error("Name exceeds maximum length");
+      return new Response(JSON.stringify({ error: "Name is too long (max 100 characters)" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (typeof data.email !== 'string' || data.email.length > MAX_EMAIL_LENGTH) {
+      console.error("Email exceeds maximum length");
+      return new Response(JSON.stringify({ error: "Email is too long" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (typeof data.subject !== 'string' || data.subject.length > MAX_SUBJECT_LENGTH) {
+      console.error("Subject exceeds maximum length");
+      return new Response(JSON.stringify({ error: "Subject is too long (max 200 characters)" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (typeof data.message !== 'string' || data.message.length > MAX_MESSAGE_LENGTH) {
+      console.error("Message exceeds maximum length");
+      return new Response(JSON.stringify({ error: "Message is too long (max 5000 characters)" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(data.email)) {
-      console.error("Invalid email format:", data.email);
+      console.error("Invalid email format");
       return new Response(JSON.stringify({ error: "Invalid email format" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -52,7 +107,7 @@ const handler = async (req: Request): Promise<Response> => {
     const zohoPassword = Deno.env.get("ZOHO_SMTP_PASSWORD");
     if (!zohoPassword) {
       console.error("ZOHO_SMTP_PASSWORD not configured");
-      return new Response(JSON.stringify({ error: "Server configuration error" }), {
+      return new Response(JSON.stringify({ error: "Unable to send message. Please try again later." }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -68,7 +123,7 @@ const handler = async (req: Request): Promise<Response> => {
       .replace(/[\r\n\t\x00-\x1F\x7F]/g, "")
       .replace(/[\\"]/g, "\\$&")
       .trim()
-      .substring(0, 100);
+      .substring(0, MAX_NAME_LENGTH);
 
     const escapeHtml = (text: string) => {
       const map: { [key: string]: string } = {
@@ -82,29 +137,29 @@ const handler = async (req: Request): Promise<Response> => {
     };
 
     // Create email content
-    const emailSubject = `Contact Form: ${data.subject}`;
+    const emailSubject = `Contact Form: ${data.subject.substring(0, MAX_SUBJECT_LENGTH)}`;
     const emailBody = `
-Name: ${data.name}
+Name: ${sanitizedName}
 Email: ${data.email}
 Subject: ${data.subject}
 
 Message:
-${data.message}
+${data.message.substring(0, MAX_MESSAGE_LENGTH)}
     `.trim();
 
     const emailHtml = `
 <h2>New Contact Form Submission</h2>
-<p><strong>Name:</strong> ${escapeHtml(data.name)}</p>
+<p><strong>Name:</strong> ${escapeHtml(sanitizedName)}</p>
 <p><strong>Email:</strong> ${escapeHtml(data.email)}</p>
 <p><strong>Subject:</strong> ${escapeHtml(data.subject)}</p>
 <p><strong>Message:</strong></p>
-<p>${escapeHtml(data.message).replace(/\n/g, "<br>")}</p>
+<p>${escapeHtml(data.message.substring(0, MAX_MESSAGE_LENGTH)).replace(/\n/g, "<br>")}</p>
     `.trim();
 
     const encoder = new TextEncoder();
     const decoder = new TextDecoder();
 
-    console.log("Connecting to Zoho SMTP server...");
+    console.log("Connecting to SMTP server...");
     
     const conn = await Deno.connectTls({
       hostname: smtpHost,
@@ -149,69 +204,69 @@ ${data.message}
     try {
       // Read initial greeting
       const greeting = await readFullResponse();
-      console.log("SMTP Greeting:", greeting.trim());
+      console.log("SMTP connection established");
 
       if (!greeting.startsWith("220")) {
-        throw new Error("Invalid SMTP greeting: " + greeting);
+        console.error("Invalid SMTP greeting received");
+        throw new Error("Email service unavailable");
       }
 
       // EHLO
       let response = await sendCommand(`EHLO whitelineissig.me`);
-      console.log("EHLO response:", response.trim());
 
       if (!response.includes("250")) {
-        throw new Error("EHLO failed: " + response);
+        console.error("EHLO command failed");
+        throw new Error("Email service unavailable");
       }
 
       // AUTH LOGIN
       response = await sendCommand("AUTH LOGIN");
-      console.log("AUTH LOGIN response:", response.trim());
 
       if (!response.startsWith("334")) {
-        throw new Error("AUTH LOGIN failed: " + response);
+        console.error("AUTH LOGIN command failed");
+        throw new Error("Email service unavailable");
       }
 
       // Send username (base64 encoded)
       response = await sendCommand(btoa(smtpUser));
-      console.log("Username sent, response:", response.trim());
 
       if (!response.startsWith("334")) {
-        throw new Error("Username rejected: " + response);
+        console.error("Username authentication step failed");
+        throw new Error("Email service unavailable");
       }
 
       // Send password (base64 encoded)
       response = await sendCommand(btoa(zohoPassword));
-      console.log("Password sent, response code:", response.substring(0, 3));
 
       if (!response.startsWith("235")) {
-        // 535 = auth failed, 334 = still waiting (shouldn't happen)
-        throw new Error("Authentication failed. Please check your Zoho password or generate an App Password in Zoho Mail settings.");
+        console.error("Password authentication failed");
+        throw new Error("Email service unavailable");
       }
 
-      console.log("Authentication successful!");
+      console.log("Authentication successful");
 
       // MAIL FROM
       response = await sendCommand(`MAIL FROM:<${smtpUser}>`);
-      console.log("MAIL FROM response:", response.trim());
 
       if (!response.startsWith("250")) {
-        throw new Error("MAIL FROM failed: " + response);
+        console.error("MAIL FROM command failed");
+        throw new Error("Email service unavailable");
       }
 
       // RCPT TO
       response = await sendCommand(`RCPT TO:<${smtpUser}>`);
-      console.log("RCPT TO response:", response.trim());
 
       if (!response.startsWith("250")) {
-        throw new Error("RCPT TO failed: " + response);
+        console.error("RCPT TO command failed");
+        throw new Error("Email service unavailable");
       }
 
       // DATA
       response = await sendCommand("DATA");
-      console.log("DATA response:", response.trim());
 
       if (!response.startsWith("354")) {
-        throw new Error("DATA failed: " + response);
+        console.error("DATA command failed");
+        throw new Error("Email service unavailable");
       }
 
       // Construct email message
@@ -240,19 +295,18 @@ ${data.message}
       await conn.write(encoder.encode(emailMessage + "\r\n.\r\n"));
       await new Promise(resolve => setTimeout(resolve, 200));
       response = await readFullResponse();
-      console.log("Message sent, response:", response.trim());
 
       if (!response.startsWith("250")) {
-        throw new Error("Message sending failed: " + response);
+        console.error("Message sending failed");
+        throw new Error("Failed to send message");
       }
 
       // QUIT
       response = await sendCommand("QUIT");
-      console.log("QUIT response:", response.trim());
 
       conn.close();
 
-      console.log("Email sent successfully!");
+      console.log("Email sent successfully");
       return new Response(JSON.stringify({ message: "Email sent successfully" }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -264,9 +318,9 @@ ${data.message}
     }
   } catch (error) {
     console.error("Error sending email:", error);
-    const errorMessage = error instanceof Error ? error.message : "Failed to send email";
+    // Return generic error message to client
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: "Failed to send message. Please try again later." }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
