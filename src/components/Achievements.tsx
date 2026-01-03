@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Calendar, ExternalLink, Heart, MessageCircle, Eye, Share2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { openExternalUrl } from "@/lib/openExternalUrl";
 
 interface FacebookPost {
   id: string;
@@ -106,6 +107,11 @@ const AchievementCard = ({ post, delay = 0 }: AchievementCardProps) => {
               href={post.permalink_url}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={(e) => {
+                // Some embedded previews/webviews ignore target=_blank; force safe open.
+                e.preventDefault();
+                openExternalUrl(post.permalink_url);
+              }}
               className="inline-flex items-center gap-2 text-foreground group-hover:text-background font-medium transition-colors"
             >
               Voir sur Facebook

@@ -1,5 +1,7 @@
 import { useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import logoWhite from "@/assets/logo-white.png";
+import { openExternalUrl } from "@/lib/openExternalUrl";
 
 const Hero = () => {
   const shapesRef = useRef<HTMLDivElement>(null);
@@ -77,6 +79,10 @@ const Hero = () => {
             href="https://surveyheart.com/form/690e7a48860f44495212aa90"
             target="_blank"
             rel="noopener noreferrer"
+            onClick={(e) => {
+              e.preventDefault();
+              openExternalUrl("https://surveyheart.com/form/690e7a48860f44495212aa90");
+            }}
             className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-white bg-transparent border-2 border-white rounded-none hover:bg-white hover:text-black transition-all duration-300 animate-slide-up"
             style={{ animationDelay: "0.5s" }}
           >
@@ -91,8 +97,8 @@ const Hero = () => {
             </svg>
           </a>
 
-          <a
-            href="/donation"
+          <Link
+            to="/donation"
             className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-white bg-transparent border-2 border-white rounded-none hover:bg-white hover:text-black transition-all duration-300 animate-slide-up"
             style={{ animationDelay: "0.6s" }}
           >
@@ -105,7 +111,7 @@ const Hero = () => {
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
             </svg>
-          </a>
+          </Link>
         </div>
       </div>
 
