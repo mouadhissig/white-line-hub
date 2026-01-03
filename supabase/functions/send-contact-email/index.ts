@@ -2,20 +2,39 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 // Allowed origins for CORS
 const allowedOrigins = [
-  'https://whitelineissig.me',
-  'https://www.whitelineissig.me',
-  'http://localhost:8080',
-  'http://localhost:5173',
-  'http://localhost:3000'
+  "https://whitelineissig.me",
+  "https://www.whitelineissig.me",
+  "http://localhost:8080",
+  "http://localhost:5173",
+  "http://localhost:3000",
 ];
 
+function isAllowedOrigin(origin: string): boolean {
+  if (!origin) return false;
+  if (allowedOrigins.includes(origin)) return true;
+
+  try {
+    const { hostname } = new URL(origin);
+    return (
+      hostname.endsWith(".lovableproject.com") ||
+      hostname.endsWith(".lovable.app") ||
+      hostname.endsWith(".netlify.app")
+    );
+  } catch {
+    return false;
+  }
+}
+
 function getCorsHeaders(req: Request): Record<string, string> {
-  const origin = req.headers.get('Origin') || '';
-  const allowedOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+  const origin = req.headers.get("Origin") || "";
+  const allowOrigin = isAllowedOrigin(origin) ? origin : allowedOrigins[0];
+
   return {
-    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Origin": allowOrigin,
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-    "Access-Control-Allow-Credentials": "true"
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Credentials": "true",
+    Vary: "Origin",
   };
 }
 

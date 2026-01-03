@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Mail, MapPin, Facebook, Instagram, Linkedin, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { openExternalUrl } from "@/lib/openExternalUrl";
+import { supabase } from "@/integrations/supabase/client";
 
 const Contact = () => {
   const sectionRef = useRef<HTMLElement>(null);
@@ -50,18 +51,13 @@ const Contact = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('https://rmjonykhawkelzdykbzb.supabase.co/functions/v1/send-contact-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+      const { error } = await supabase.functions.invoke("send-contact-email", {
+        body: formData,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.error || response.statusText;
-        throw new Error(`Erreur ${response.status}: ${errorMessage}`);
+      if (error) {
+        // Don't leak internal details to the client UI
+        throw new Error("Impossible d'envoyer le message. Réessayez dans quelques instants.");
       }
 
       toast({
