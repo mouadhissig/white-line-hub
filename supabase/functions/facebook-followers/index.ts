@@ -1,9 +1,23 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+// Allowed origins for CORS
+const allowedOrigins = [
+  'https://whitelineissig.me',
+  'https://www.whitelineissig.me',
+  'http://localhost:8080',
+  'http://localhost:5173',
+  'http://localhost:3000'
+];
+
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('Origin') || '';
+  const allowedOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Credentials': 'true'
+  };
+}
 
 // Simple in-memory cache
 let cachedData: { followers: number; timestamp: number } | null = null;
@@ -37,7 +51,12 @@ function isRateLimited(key: string): boolean {
   return false;
 }
 
+// Default fallback value
+const fallbackFollowers = 150;
+
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -46,9 +65,9 @@ serve(async (req) => {
     // Check rate limit
     const clientKey = getRateLimitKey(req);
     if (isRateLimited(clientKey)) {
-      console.log('Rate limit exceeded for:', clientKey);
+      console.log('Rate limit exceeded for client');
       return new Response(
-        JSON.stringify({ error: 'Too many requests', followers: 150 }),
+        JSON.stringify({ error: 'Too many requests', followers: fallbackFollowers }),
         { 
           status: 429, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': '60' } 
@@ -70,23 +89,29 @@ serve(async (req) => {
     const pageId = '156324860887838';
 
     if (!accessToken) {
-      throw new Error('Facebook access token not configured');
+      console.error('Access token not configured');
+      return new Response(
+        JSON.stringify({ followers: fallbackFollowers }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    console.log('Fetching Facebook page followers...');
+    console.log('Fetching page followers...');
 
     const response = await fetch(
       `https://graph.facebook.com/v18.0/${pageId}?fields=followers_count&access_token=${accessToken}`
     );
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error('Facebook API error:', error);
-      throw new Error(`Facebook API error: ${response.status}`);
+      console.error('API error fetching followers:', response.status);
+      return new Response(
+        JSON.stringify({ followers: fallbackFollowers }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const data = await response.json();
-    console.log('Successfully fetched followers:', data);
+    console.log('Successfully fetched followers');
 
     // Update cache
     cachedData = { followers: data.followers_count || 0, timestamp: now };
@@ -96,10 +121,9 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error fetching Facebook followers:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error fetching followers:', error);
     return new Response(
-      JSON.stringify({ error: errorMessage, followers: 150 }),
+      JSON.stringify({ followers: fallbackFollowers }),
       { 
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

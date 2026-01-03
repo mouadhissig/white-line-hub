@@ -1,9 +1,23 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+// Allowed origins for CORS
+const allowedOrigins = [
+  'https://whitelineissig.me',
+  'https://www.whitelineissig.me',
+  'http://localhost:8080',
+  'http://localhost:5173',
+  'http://localhost:3000'
+];
+
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('Origin') || '';
+  const allowedOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Credentials': 'true'
+  };
+}
 
 // Simple in-memory cache
 let cachedData: { posts: any[]; timestamp: number } | null = null;
@@ -38,6 +52,8 @@ function isRateLimited(key: string): boolean {
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -46,7 +62,7 @@ serve(async (req) => {
     // Check rate limit
     const clientKey = getRateLimitKey(req);
     if (isRateLimited(clientKey)) {
-      console.log('Rate limit exceeded for:', clientKey);
+      console.log('Rate limit exceeded for client');
       return new Response(
         JSON.stringify({ error: 'Too many requests', posts: [] }),
         { 
@@ -70,23 +86,29 @@ serve(async (req) => {
     const pageId = '156324860887838';
 
     if (!accessToken) {
-      throw new Error('Facebook access token not configured');
+      console.error('Access token not configured');
+      return new Response(
+        JSON.stringify({ posts: [] }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    console.log('Fetching Facebook page posts...');
+    console.log('Fetching page posts...');
 
     const response = await fetch(
       `https://graph.facebook.com/v18.0/${pageId}/posts?fields=message,created_time,full_picture,permalink_url,reactions.summary(total_count),comments.summary(total_count),shares&limit=3&access_token=${accessToken}`
     );
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error('Facebook API error:', error);
-      throw new Error(`Facebook API error: ${response.status}`);
+      console.error('API error fetching posts:', response.status);
+      return new Response(
+        JSON.stringify({ posts: [] }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const data = await response.json();
-    console.log('Successfully fetched posts:', data.data?.length || 0, 'posts');
+    console.log('Successfully fetched posts:', data.data?.length || 0);
 
     // Update cache
     cachedData = { posts: data.data || [], timestamp: now };
@@ -96,10 +118,9 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error fetching Facebook posts:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error fetching posts:', error);
     return new Response(
-      JSON.stringify({ error: errorMessage, posts: [] }),
+      JSON.stringify({ posts: [] }),
       { 
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
