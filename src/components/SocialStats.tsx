@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { openExternalUrl } from "@/lib/openExternalUrl";
 
 interface SocialStats {
   followers: number;
@@ -102,6 +103,11 @@ const SocialCard = ({ platform, stats, isVisible, delay }: SocialCardProps) => {
       href={config.link}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={(e) => {
+        // Some embedded previews/webviews ignore target=_blank; force safe open.
+        e.preventDefault();
+        openExternalUrl(config.link);
+      }}
       className={`group relative overflow-hidden bg-secondary/30 border-2 border-foreground/20 hover:border-foreground transition-all duration-500 p-8 ${
         isVisible ? "animate-slide-up" : "opacity-0"
       }`}

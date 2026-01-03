@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Mail, MapPin, Facebook, Instagram, Linkedin, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { openExternalUrl } from "@/lib/openExternalUrl";
 
 const Contact = () => {
   const sectionRef = useRef<HTMLElement>(null);
@@ -136,6 +137,10 @@ const Contact = () => {
                   href="https://www.facebook.com/profile.php?id=156324860887838"
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    openExternalUrl("https://www.facebook.com/profile.php?id=156324860887838");
+                  }}
                   className="w-12 h-12 border-2 border-foreground flex items-center justify-center hover:bg-foreground hover:text-background transition-all duration-300"
                   aria-label="Facebook"
                 >
@@ -145,6 +150,10 @@ const Contact = () => {
                   href="https://www.instagram.com/whiteline_issig/"
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    openExternalUrl("https://www.instagram.com/whiteline_issig/");
+                  }}
                   className="w-12 h-12 border-2 border-foreground flex items-center justify-center hover:bg-foreground hover:text-background transition-all duration-300"
                   aria-label="Instagram"
                 >
