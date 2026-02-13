@@ -37,10 +37,41 @@ serve(async (req) => {
   try {
     const { nom, prenom, email, telephone, statut, anneeEtude, profession } = await req.json();
 
-    // Validate
+    // Validate required fields
     if (!nom || !prenom || !email || !telephone || !statut) {
       return new Response(JSON.stringify({ error: "Champs obligatoires manquants." }), { status: 400, headers });
     }
+
+    // Server-side type and length validation
+    if (typeof nom !== 'string' || nom.trim().length === 0 || nom.length > 100) {
+      return new Response(JSON.stringify({ error: "Nom invalide (max 100 caractères)." }), { status: 400, headers });
+    }
+    if (typeof prenom !== 'string' || prenom.trim().length === 0 || prenom.length > 100) {
+      return new Response(JSON.stringify({ error: "Prénom invalide (max 100 caractères)." }), { status: 400, headers });
+    }
+    if (typeof email !== 'string' || email.length > 255 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return new Response(JSON.stringify({ error: "Adresse e-mail invalide." }), { status: 400, headers });
+    }
+    if (typeof telephone !== 'string' || telephone.trim().length === 0 || telephone.length > 20) {
+      return new Response(JSON.stringify({ error: "Téléphone invalide (max 20 caractères)." }), { status: 400, headers });
+    }
+    if (typeof statut !== 'string' || !['etudiant', 'personnel'].includes(statut)) {
+      return new Response(JSON.stringify({ error: "Statut invalide." }), { status: 400, headers });
+    }
+    if (anneeEtude && (typeof anneeEtude !== 'string' || anneeEtude.length > 50)) {
+      return new Response(JSON.stringify({ error: "Année d'étude invalide." }), { status: 400, headers });
+    }
+    if (profession && (typeof profession !== 'string' || profession.length > 200)) {
+      return new Response(JSON.stringify({ error: "Profession trop longue (max 200 caractères)." }), { status: 400, headers });
+    }
+
+    // Sanitize inputs
+    const cleanNom = nom.trim().substring(0, 100);
+    const cleanPrenom = prenom.trim().substring(0, 100);
+    const cleanEmail = email.trim().substring(0, 255);
+    const cleanTelephone = telephone.trim().substring(0, 20);
+    const cleanProfession = profession ? profession.trim().substring(0, 200) : "";
+    const cleanAnneeEtude = anneeEtude ? anneeEtude.trim().substring(0, 50) : "";
 
     const GOOGLE_SHEETS_WEBHOOK_URL = Deno.env.get("GOOGLE_SHEETS_WEBHOOK_URL");
     if (!GOOGLE_SHEETS_WEBHOOK_URL) {
@@ -50,17 +81,17 @@ serve(async (req) => {
 
     const now = new Date().toISOString();
     const statutLabel = statut === "etudiant" ? "Étudiant(e)" : "Personnel médical";
-    const detail = statut === "etudiant" ? anneeEtude || "" : profession || "";
+    const detail = statut === "etudiant" ? cleanAnneeEtude : cleanProfession;
 
     // Send to Google Sheets via Apps Script Web App
     const sheetResponse = await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        nom,
-        prenom,
-        email,
-        telephone,
+        nom: cleanNom,
+        prenom: cleanPrenom,
+        email: cleanEmail,
+        telephone: cleanTelephone,
         statut: statutLabel,
         detail,
         date: now,
