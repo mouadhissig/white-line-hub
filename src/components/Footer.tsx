@@ -1,5 +1,6 @@
+import { Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
-import { Heart } from "lucide-react";
+import { Heart, ClipboardList } from "lucide-react";
 
 const Footer = () => {
   return (
@@ -7,6 +8,14 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col items-center justify-center text-center space-y-6">
           <img src={logo} alt="White Line Club" className="h-16 w-auto invert" />
+
+          <Link
+            to="/survey"
+            className="inline-flex items-center gap-2 border-2 border-background px-6 py-3 text-sm uppercase tracking-wider hover:bg-background hover:text-foreground transition-all duration-300"
+          >
+            <ClipboardList size={18} />
+            Formulaire d'inscription
+          </Link>
           
           <div className="flex items-center gap-2 text-sm">
             <span>Fait avec</span>
