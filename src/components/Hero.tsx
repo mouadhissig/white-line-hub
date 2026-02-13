@@ -75,18 +75,12 @@ const Hero = () => {
             </svg>
           </button>
           
-          <a
-            href="https://surveyheart.com/form/690e7a48860f44495212aa90"
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => {
-              e.preventDefault();
-              openExternalUrl("https://surveyheart.com/form/690e7a48860f44495212aa90");
-            }}
+          <Link
+            to="/survey"
             className="group relative inline-flex items-center justify-center px-8 py-4 text-lg font-medium text-white bg-transparent border-2 border-white rounded-none hover:bg-white hover:text-black transition-all duration-300 animate-slide-up"
             style={{ animationDelay: "0.5s" }}
           >
-            survey
+            Survey
             <svg
               className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform"
               fill="none"
@@ -95,7 +89,7 @@ const Hero = () => {
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
-          </a>
+          </Link>
 
           <Link
             to="/donation"
