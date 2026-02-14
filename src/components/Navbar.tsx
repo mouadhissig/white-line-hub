@@ -74,14 +74,14 @@ const Navbar = () => {
   ];
 
   const ornaments = useMemo(() => {
-    const types: OrnamentType[] = ["lantern", "star", "crescent", "lantern", "star", "lantern", "crescent", "star", "lantern", "star"];
-    return types.map((type, i) => ({
-      id: i,
-      type,
-      left: `${5 + i * 10}%`,
-      wireHeight: type === "lantern" ? 28 + (i % 3) * 8 : 20 + (i % 4) * 6,
-      delay: `${i * 0.3}s`,
-    }));
+    const items: { type: OrnamentType; wireHeight: number; delay: string; size: "sm" | "md" | "lg" }[] = [
+      { type: "star", wireHeight: 18, delay: "0s", size: "sm" },
+      { type: "crescent", wireHeight: 30, delay: "0.4s", size: "md" },
+      { type: "lantern", wireHeight: 42, delay: "0.8s", size: "lg" },
+      { type: "star", wireHeight: 24, delay: "1.2s", size: "md" },
+      { type: "lantern", wireHeight: 34, delay: "0.6s", size: "md" },
+    ];
+    return items;
   }, []);
 
   const goldColor = isScrolled ? "#B8922E" : "#D4A84B";
@@ -139,43 +139,35 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Ramadan Wire Decoration */}
+      {/* Ramadan Ornaments - Right Cluster */}
       {!isMobileMenuOpen && (
-        <div className="absolute bottom-0 left-0 right-0 translate-y-full pointer-events-none z-20">
-          {/* Horizontal wire */}
-          <div
-            className="absolute top-0 left-0 right-0 h-[1px]"
-            style={{ backgroundColor: goldColor, opacity: 0.6 }}
-          />
-          {/* Ornaments */}
-          {ornaments.map((ornament) => (
-            <div
-              key={ornament.id}
-              className={`absolute top-0 pointer-events-auto ramadan-ornament hidden sm:block ${
-                ornament.id % 3 === 0 ? "" : "hidden md:block"
-              }`}
-              style={{
-                left: ornament.left,
-                animationDelay: ornament.delay,
-                transformOrigin: "top center",
-              }}
-            >
-              {/* Wire */}
+        <div className="absolute top-0 right-8 sm:right-12 lg:right-20 h-full pointer-events-none z-20 hidden sm:flex items-start">
+          <div className="flex items-start gap-4 pt-0">
+            {ornaments.map((ornament, i) => (
               <div
-                className="mx-auto"
+                key={i}
+                className="pointer-events-auto ramadan-ornament flex flex-col items-center"
                 style={{
-                  width: 1,
-                  height: ornament.wireHeight,
-                  backgroundColor: goldColor,
-                  opacity: 0.5,
+                  animationDelay: ornament.delay,
+                  transformOrigin: "top center",
                 }}
-              />
-              {/* Ornament */}
-              <div className="flex justify-center -mt-1">
-                <OrnamentIcon type={ornament.type} color={goldColor} />
+              >
+                {/* Wire */}
+                <div
+                  style={{
+                    width: 1,
+                    height: ornament.wireHeight,
+                    backgroundColor: goldColor,
+                    opacity: 0.5,
+                  }}
+                />
+                {/* Ornament */}
+                <div className="-mt-1">
+                  <OrnamentIcon type={ornament.type} color={goldColor} />
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 

@@ -3,6 +3,7 @@ import { Mail, MapPin, Facebook, Instagram, Linkedin, Send } from "lucide-react"
 import { useToast } from "@/hooks/use-toast";
 import { openExternalUrl } from "@/lib/openExternalUrl";
 import { supabase } from "@/integrations/supabase/client";
+import RamadanDecor from "./RamadanDecor";
 
 const Contact = () => {
   const sectionRef = useRef<HTMLElement>(null);
@@ -85,8 +86,9 @@ const Contact = () => {
   };
 
   return (
-    <section id="contact" ref={sectionRef} className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/30">
-      <div className="max-w-7xl mx-auto">
+    <section id="contact" ref={sectionRef} className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/30 relative overflow-hidden">
+      <RamadanDecor variant="c" />
+      <div className="max-w-7xl mx-auto relative z-10">
         <div className={`text-center mb-16 ${isVisible ? "animate-slide-up" : "opacity-0"}`}>
           <h2 className="text-5xl sm:text-6xl font-display mb-6 tracking-wider">
             CONTACTEZ-NOUS
