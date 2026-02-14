@@ -3,6 +3,46 @@ import { Menu, X } from "lucide-react";
 import logoBlack from "@/assets/logo-black.png";
 import logoWhite from "@/assets/logo-white.png";
 
+type OrnamentType = "lantern" | "crescent" | "star";
+
+const Lantern = ({ color }: { color: string }) => (
+  <svg width="18" height="24" viewBox="0 0 18 24" fill="none">
+    <line x1="9" y1="0" x2="9" y2="4" stroke={color} strokeWidth="1.5" />
+    <path d="M6 4 Q6 2 9 2 Q12 2 12 4" stroke={color} strokeWidth="1" fill="none" />
+    <rect x="5" y="4" width="8" height="12" rx="3" fill={color} opacity="0.85" />
+    <rect x="7" y="6" width="4" height="8" rx="1.5" fill="white" opacity="0.2" />
+    <path d="M5 16 Q9 20 13 16" stroke={color} strokeWidth="1" fill={color} opacity="0.85" />
+  </svg>
+);
+
+const Crescent = ({ color }: { color: string }) => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+    <path
+      d="M10 1C5.6 1 2 4.6 2 9s3.6 8 8 8c1.8 0 3.4-.6 4.8-1.5C13.2 14 12 11.6 12 9s1.2-5 2.8-6.5C13.4 1.6 11.8 1 10 1z"
+      fill={color}
+      opacity="0.9"
+    />
+  </svg>
+);
+
+const Star = ({ color }: { color: string }) => (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+    <path
+      d="M7 0l1.8 4.6L14 5.2l-3.7 3.2 1.1 5.1L7 10.8 2.6 13.5l1.1-5.1L0 5.2l5.2-.6z"
+      fill={color}
+      opacity="0.9"
+    />
+  </svg>
+);
+
+const OrnamentIcon = ({ type, color }: { type: OrnamentType; color: string }) => {
+  switch (type) {
+    case "lantern": return <Lantern color={color} />;
+    case "crescent": return <Crescent color={color} />;
+    case "star": return <Star color={color} />;
+  }
+};
+
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -33,43 +73,25 @@ const Navbar = () => {
     { label: "Contact", id: "contact" },
   ];
 
-  // Generate snowflakes with stable positions
-  const snowflakes = useMemo(() => {
-    return Array.from({ length: 25 }, (_, i) => ({
+  const ornaments = useMemo(() => {
+    const types: OrnamentType[] = ["lantern", "star", "crescent", "lantern", "star", "lantern", "crescent", "star", "lantern", "star"];
+    return types.map((type, i) => ({
       id: i,
-      left: `${(i * 4) % 100}%`,
-      delay: `${(i * 0.3) % 3}s`,
-      duration: `${2 + (i % 3)}s`,
-      size: `${0.4 + (i % 3) * 0.2}em`,
+      type,
+      left: `${5 + i * 10}%`,
+      wireHeight: type === "lantern" ? 28 + (i % 3) * 8 : 20 + (i % 4) * 6,
+      delay: `${i * 0.3}s`,
     }));
   }, []);
 
+  const goldColor = isScrolled ? "#B8922E" : "#D4A84B";
+
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 overflow-hidden ${
-        isScrolled
-          ? "bg-background shadow-lg"
-          : "bg-transparent"
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        isScrolled ? "bg-background shadow-lg" : "bg-transparent"
       }`}
     >
-      {/* Snow overlay - always visible */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {snowflakes.map((flake) => (
-          <span
-            key={flake.id}
-            className={`snowflake ${isScrolled ? 'text-foreground' : 'text-white'}`}
-            style={{
-              left: flake.left,
-              animationDelay: flake.delay,
-              animationDuration: flake.duration,
-              fontSize: flake.size,
-            }}
-          >
-            ❄
-          </span>
-        ))}
-      </div>
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
@@ -116,6 +138,46 @@ const Navbar = () => {
           </button>
         </div>
       </div>
+
+      {/* Ramadan Wire Decoration */}
+      {!isMobileMenuOpen && (
+        <div className="absolute bottom-0 left-0 right-0 translate-y-full pointer-events-none z-20">
+          {/* Horizontal wire */}
+          <div
+            className="absolute top-0 left-0 right-0 h-[1px]"
+            style={{ backgroundColor: goldColor, opacity: 0.6 }}
+          />
+          {/* Ornaments */}
+          {ornaments.map((ornament) => (
+            <div
+              key={ornament.id}
+              className={`absolute top-0 pointer-events-auto ramadan-ornament hidden sm:block ${
+                ornament.id % 3 === 0 ? "" : "hidden md:block"
+              }`}
+              style={{
+                left: ornament.left,
+                animationDelay: ornament.delay,
+                transformOrigin: "top center",
+              }}
+            >
+              {/* Wire */}
+              <div
+                className="mx-auto"
+                style={{
+                  width: 1,
+                  height: ornament.wireHeight,
+                  backgroundColor: goldColor,
+                  opacity: 0.5,
+                }}
+              />
+              {/* Ornament */}
+              <div className="flex justify-center -mt-1">
+                <OrnamentIcon type={ornament.type} color={goldColor} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Mobile Menu */}
       <div
