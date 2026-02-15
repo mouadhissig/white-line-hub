@@ -115,13 +115,13 @@ const About = () => {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <StatItem
             icon={<Award size={48} strokeWidth={1.5} />}
-            value={3}
+            value={6}
             suffix="+"
             label="Événements organisés"
           />
           <StatItem
             icon={<Heart size={48} strokeWidth={1.5} />}
-            value={500}
+            value={1000}
             suffix="+"
             label="Bénéficiaires"
           />
