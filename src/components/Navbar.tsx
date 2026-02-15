@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Menu, X } from "lucide-react";
 import logoBlack from "@/assets/logo-black.png";
-import logoWhite from "@/assets/issig-white.png";
+import logoWhite from "@/assets/logo-white.png";
 
 type OrnamentType = "lantern" | "crescent" | "star";
 
