@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import logoWhite from "@/assets/logo-white.png";
+import logoWhite from "@/assets/issig-white.png";
 import { openExternalUrl } from "@/lib/openExternalUrl";
 import MandalaDecor from "./MandalaDecor";
 
