@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Send, CheckCircle2 } from "lucide-react";
-import logo from "@/assets/logo-white.png";
+import logo from "@/assets/issig-white.png";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import MandalaDecor from "@/components/MandalaDecor";
