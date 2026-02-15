@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Award, Heart, Target } from "lucide-react";
 import RamadanDecor from "./RamadanDecor";
+import MandalaDecor from "./MandalaDecor";
 
 interface StatItemProps {
   icon: React.ReactNode;
@@ -96,6 +97,7 @@ const About = () => {
   return (
     <section id="about" ref={sectionRef} className="py-24 px-4 sm:px-6 lg:px-8 bg-background relative overflow-hidden">
       <RamadanDecor variant="a" />
+      <MandalaDecor theme="light" variant="b" />
       <div className="max-w-7xl mx-auto relative z-10">
         <div className={`text-center mb-16 ${isVisible ? "animate-slide-up" : "opacity-0"}`}>
           <h2 className="text-5xl sm:text-6xl font-display mb-6 tracking-wider">

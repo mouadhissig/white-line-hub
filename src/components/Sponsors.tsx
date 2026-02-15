@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Building2 } from "lucide-react";
+import MandalaDecor from "./MandalaDecor";
 
 const Sponsors = () => {
   const sectionRef = useRef<HTMLElement>(null);
@@ -27,8 +28,9 @@ const Sponsors = () => {
   const sponsorSlots = Array.from({ length: 8 }, (_, i) => i);
 
   return (
-    <section id="sponsors" ref={sectionRef} className="py-24 px-4 sm:px-6 lg:px-8 bg-foreground text-background overflow-hidden">
-      <div className="max-w-7xl mx-auto">
+    <section id="sponsors" ref={sectionRef} className="py-24 px-4 sm:px-6 lg:px-8 bg-foreground text-background overflow-hidden relative">
+      <MandalaDecor theme="dark" variant="b" />
+      <div className="max-w-7xl mx-auto relative z-10">
         <div className={`text-center mb-16 ${isVisible ? "animate-slide-up" : "opacity-0"}`}>
           <h2 className="text-5xl sm:text-6xl font-display mb-6 tracking-wider">
             NOS SPONSORS

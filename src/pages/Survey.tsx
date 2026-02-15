@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Send, CheckCircle2 } from "lucide-react";
 import logo from "@/assets/logo-white.png";
 import { supabase } from "@/integrations/supabase/client";
+import Navbar from "@/components/Navbar";
+import MandalaDecor from "@/components/MandalaDecor";
 
 type Statut = "" | "etudiant" | "personnel";
 
@@ -70,8 +72,9 @@ const Survey = () => {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-foreground text-background flex items-center justify-center px-4">
-        <div className="max-w-md w-full text-center space-y-8 animate-scale-in">
+      <div className="min-h-screen bg-foreground text-background flex items-center justify-center px-4 relative overflow-hidden">
+        <MandalaDecor theme="dark" variant="a" />
+        <div className="max-w-md w-full text-center space-y-8 animate-scale-in relative z-10">
           <CheckCircle2 size={64} className="mx-auto" strokeWidth={1.5} />
           <h1 className="text-3xl font-display tracking-wider">MERCI !</h1>
           <p className="text-background/80 text-lg leading-relaxed">
@@ -90,21 +93,13 @@ const Survey = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-foreground text-background py-6 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <ArrowLeft size={20} />
-            <img src={logo} alt="White Line Club" className="h-10 w-auto" />
-          </Link>
-          <span className="text-sm uppercase tracking-widest text-background/70">Formulaire</span>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background relative">
+      <Navbar />
 
       {/* Form */}
-      <main className="py-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-2xl mx-auto">
+      <main className="pt-28 pb-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        <MandalaDecor theme="light" variant="b" />
+        <div className="max-w-2xl mx-auto relative z-10">
           <div className="text-center mb-12">
             <h1 className="text-4xl sm:text-5xl font-display tracking-wider mb-4">INSCRIPTION</h1>
             <div className="w-16 h-1 bg-foreground mx-auto mb-6" />

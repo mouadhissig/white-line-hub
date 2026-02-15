@@ -141,32 +141,36 @@ const Navbar = () => {
 
       {/* Ramadan Ornaments - Right Cluster */}
       {!isMobileMenuOpen && (
-        <div className="absolute top-0 right-8 sm:right-12 lg:right-20 h-full pointer-events-none z-20 hidden sm:flex items-start">
-          <div className="flex items-start gap-4 pt-0">
-            {ornaments.map((ornament, i) => (
-              <div
-                key={i}
-                className="pointer-events-auto ramadan-ornament flex flex-col items-center"
-                style={{
-                  animationDelay: ornament.delay,
-                  transformOrigin: "top center",
-                }}
-              >
-                {/* Wire */}
+        <div className="absolute top-0 right-4 sm:right-12 lg:right-20 h-full pointer-events-none z-20 flex items-start">
+          <div className="flex items-start gap-2 sm:gap-4 pt-0">
+            {ornaments.map((ornament, i) => {
+              // On mobile, only show first 3 ornaments with smaller sizes
+              const mobileHidden = i >= 3 ? "hidden sm:flex" : "flex";
+              return (
                 <div
+                  key={i}
+                  className={`pointer-events-auto ramadan-ornament flex-col items-center ${mobileHidden}`}
                   style={{
-                    width: 1,
-                    height: ornament.wireHeight,
-                    backgroundColor: goldColor,
-                    opacity: 0.5,
+                    animationDelay: ornament.delay,
+                    transformOrigin: "top center",
                   }}
-                />
-                {/* Ornament */}
-                <div className="-mt-1">
-                  <OrnamentIcon type={ornament.type} color={goldColor} />
+                >
+                  {/* Wire */}
+                  <div
+                    style={{
+                      width: 1,
+                      height: ornament.wireHeight * (typeof window !== "undefined" && window.innerWidth < 640 ? 0.6 : 1),
+                      backgroundColor: goldColor,
+                      opacity: 0.5,
+                    }}
+                  />
+                  {/* Ornament */}
+                  <div className="-mt-1 scale-75 sm:scale-100">
+                    <OrnamentIcon type={ornament.type} color={goldColor} />
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

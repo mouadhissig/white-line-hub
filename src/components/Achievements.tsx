@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Calendar, ExternalLink, Heart, MessageCircle, Eye, Share2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { openExternalUrl } from "@/lib/openExternalUrl";
+import MandalaDecor from "./MandalaDecor";
 
 interface FacebookPost {
   id: string;
@@ -182,8 +183,9 @@ const Achievements = () => {
   }, []);
 
   return (
-    <section id="achievements" ref={sectionRef} className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/30">
-      <div className="max-w-7xl mx-auto">
+    <section id="achievements" ref={sectionRef} className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/30 relative overflow-hidden">
+      <MandalaDecor theme="light" variant="c" />
+      <div className="max-w-7xl mx-auto relative z-10">
         <div className={`text-center mb-16 ${isVisible ? "animate-slide-up" : "opacity-0"}`}>
           <h2 className="text-5xl sm:text-6xl font-display mb-6 tracking-wider">
             NOS RÉALISATIONS
