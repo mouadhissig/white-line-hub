@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import logoWhite from "@/assets/logo-white.png";
 import { openExternalUrl } from "@/lib/openExternalUrl";
+import MandalaDecor from "./MandalaDecor";
 
 const Hero = () => {
   const shapesRef = useRef<HTMLDivElement>(null);
@@ -29,6 +30,7 @@ const Hero = () => {
 
   return (
     <section id="hero" className="relative min-h-screen bg-black overflow-hidden flex items-center justify-center">
+      <MandalaDecor theme="dark" variant="a" />
       {/* Animated Background Shapes */}
       <div ref={shapesRef} className="absolute inset-0 pointer-events-none">
         {/* Circle - inspired by caduceus center */}

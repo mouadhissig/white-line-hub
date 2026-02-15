@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Lightbulb, Users, TrendingUp, Globe, BookOpen, Sparkles } from "lucide-react";
 import RamadanDecor from "./RamadanDecor";
+import MandalaDecor from "./MandalaDecor";
 
 interface GoalItemProps {
   number: string;
@@ -114,6 +115,7 @@ const Goals = () => {
   return (
     <section id="goals" ref={sectionRef} className="py-24 px-4 sm:px-6 lg:px-8 bg-background relative overflow-hidden">
       <RamadanDecor variant="b" />
+      <MandalaDecor theme="light" variant="d" />
       <div className="max-w-6xl mx-auto relative z-10">
         <div className={`text-center mb-16 ${isVisible ? "animate-slide-up" : "opacity-0"}`}>
           <h2 className="text-5xl sm:text-6xl font-display mb-6 tracking-wider">

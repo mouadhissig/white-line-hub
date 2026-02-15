@@ -1,11 +1,13 @@
 import { Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
 import { Heart, ClipboardList } from "lucide-react";
+import MandalaDecor from "./MandalaDecor";
 
 const Footer = () => {
   return (
-    <footer className="bg-foreground text-background py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+    <footer className="bg-foreground text-background py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      <MandalaDecor theme="dark" variant="c" />
+      <div className="max-w-7xl mx-auto relative z-10">
         <div className="flex flex-col items-center justify-center text-center space-y-6">
           <img src={logo} alt="White Line Club" className="h-16 w-auto invert" />
 
