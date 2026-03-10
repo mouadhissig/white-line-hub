@@ -17,9 +17,8 @@ const Survey = () => {
   const [prenom, setPrenom] = useState("");
   const [email, setEmail] = useState("");
   const [telephone, setTelephone] = useState("");
-  const [statut, setStatut] = useState<Statut>("");
   const [anneeEtude, setAnneeEtude] = useState("");
-  const [profession, setProfession] = useState("");
+  const [formations, setFormations] = useState<Formation[]>([]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
