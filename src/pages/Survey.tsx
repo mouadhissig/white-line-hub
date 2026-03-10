@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import MandalaDecor from "@/components/MandalaDecor";
 
-type Statut = "" | "etudiant" | "personnel";
+type Formation = "sutures" | "platrage";
 
 const Survey = () => {
   const [submitted, setSubmitted] = useState(false);
