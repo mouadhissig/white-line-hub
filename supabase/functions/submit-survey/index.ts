@@ -35,14 +35,14 @@ serve(async (req) => {
   const headers = getCorsHeaders(req);
 
   try {
-    const { nom, prenom, email, telephone, statut, anneeEtude, profession } = await req.json();
+    const { nom, prenom, email, telephone, anneeEtude, formations } = await req.json();
 
     // Validate required fields
-    if (!nom || !prenom || !email || !telephone || !statut) {
+    if (!nom || !prenom || !email || !telephone || !anneeEtude || !formations || !Array.isArray(formations) || formations.length === 0) {
       return new Response(JSON.stringify({ error: "Champs obligatoires manquants." }), { status: 400, headers });
     }
 
-    // Server-side type and length validation
+    // Server-side validation
     if (typeof nom !== 'string' || nom.trim().length === 0 || nom.length > 100) {
       return new Response(JSON.stringify({ error: "Nom invalide (max 100 caractères)." }), { status: 400, headers });
     }
@@ -55,14 +55,12 @@ serve(async (req) => {
     if (typeof telephone !== 'string' || telephone.trim().length === 0 || telephone.length > 20) {
       return new Response(JSON.stringify({ error: "Téléphone invalide (max 20 caractères)." }), { status: 400, headers });
     }
-    if (typeof statut !== 'string' || !['etudiant', 'personnel'].includes(statut)) {
-      return new Response(JSON.stringify({ error: "Statut invalide." }), { status: 400, headers });
-    }
-    if (anneeEtude && (typeof anneeEtude !== 'string' || anneeEtude.length > 50)) {
+    if (typeof anneeEtude !== 'string' || anneeEtude.length > 50) {
       return new Response(JSON.stringify({ error: "Année d'étude invalide." }), { status: 400, headers });
     }
-    if (profession && (typeof profession !== 'string' || profession.length > 200)) {
-      return new Response(JSON.stringify({ error: "Profession trop longue (max 200 caractères)." }), { status: 400, headers });
+    const validFormations = ["sutures", "platrage"];
+    if (!formations.every((f: string) => validFormations.includes(f))) {
+      return new Response(JSON.stringify({ error: "Formation invalide." }), { status: 400, headers });
     }
 
     // Sanitize inputs
@@ -70,8 +68,13 @@ serve(async (req) => {
     const cleanPrenom = prenom.trim().substring(0, 100);
     const cleanEmail = email.trim().substring(0, 255);
     const cleanTelephone = telephone.trim().substring(0, 20);
-    const cleanProfession = profession ? profession.trim().substring(0, 200) : "";
-    const cleanAnneeEtude = anneeEtude ? anneeEtude.trim().substring(0, 50) : "";
+    const cleanAnneeEtude = anneeEtude.trim().substring(0, 50);
+
+    const formationLabels: Record<string, string> = {
+      sutures: "Les sutures médicales",
+      platrage: "Le plâtrage (pose de plâtre)",
+    };
+    const formationsText = formations.map((f: string) => formationLabels[f] || f).join(", ");
 
     const GOOGLE_SHEETS_WEBHOOK_URL = Deno.env.get("GOOGLE_SHEETS_WEBHOOK_URL");
     if (!GOOGLE_SHEETS_WEBHOOK_URL) {
@@ -80,8 +83,6 @@ serve(async (req) => {
     }
 
     const now = new Date().toISOString();
-    const statutLabel = statut === "etudiant" ? "Étudiant(e)" : "Personnel médical";
-    const detail = statut === "etudiant" ? cleanAnneeEtude : cleanProfession;
 
     // Send to Google Sheets via Apps Script Web App
     const sheetResponse = await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
@@ -92,8 +93,8 @@ serve(async (req) => {
         prenom: cleanPrenom,
         email: cleanEmail,
         telephone: cleanTelephone,
-        statut: statutLabel,
-        detail,
+        anneeEtude: cleanAnneeEtude,
+        formations: formationsText,
         date: now,
       }),
     });
