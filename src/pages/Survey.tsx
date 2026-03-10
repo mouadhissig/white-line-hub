@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import MandalaDecor from "@/components/MandalaDecor";
 
-type Statut = "" | "etudiant" | "personnel";
+type Formation = "sutures" | "platrage";
 
 const Survey = () => {
   const [submitted, setSubmitted] = useState(false);
@@ -17,15 +17,20 @@ const Survey = () => {
   const [prenom, setPrenom] = useState("");
   const [email, setEmail] = useState("");
   const [telephone, setTelephone] = useState("");
-  const [statut, setStatut] = useState<Statut>("");
   const [anneeEtude, setAnneeEtude] = useState("");
-  const [profession, setProfession] = useState("");
+  const [formations, setFormations] = useState<Formation[]>([]);
+
+  const toggleFormation = (f: Formation) => {
+    setFormations((prev) =>
+      prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f]
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    if (!nom || !prenom || !email || !telephone || !statut) {
+    if (!nom || !prenom || !email || !telephone || !anneeEtude) {
       setError("Veuillez remplir tous les champs obligatoires.");
       return;
     }
@@ -36,13 +41,8 @@ const Survey = () => {
       return;
     }
 
-    if (statut === "etudiant" && !anneeEtude) {
-      setError("Veuillez sélectionner votre année d'étude.");
-      return;
-    }
-
-    if (statut === "personnel" && !profession) {
-      setError("Veuillez indiquer votre profession / spécialité.");
+    if (formations.length === 0) {
+      setError("Veuillez sélectionner au moins une formation.");
       return;
     }
 
@@ -55,9 +55,8 @@ const Survey = () => {
           prenom: prenom.trim().substring(0, 100),
           email: email.trim().substring(0, 255),
           telephone: telephone.trim().substring(0, 20),
-          statut,
-          anneeEtude: statut === "etudiant" ? anneeEtude : "",
-          profession: statut === "personnel" ? profession.trim().substring(0, 200) : "",
+          anneeEtude,
+          formations,
         },
       });
 
@@ -169,73 +168,50 @@ const Survey = () => {
               />
             </div>
 
-            {/* Statut */}
-            <div className="space-y-4">
+            {/* Année d'étude */}
+            <div className="space-y-2">
               <label className="text-sm font-medium uppercase tracking-wider">
-                Statut <span className="text-destructive">*</span>
+                Année d'étude <span className="text-destructive">*</span>
               </label>
-              <div className="grid sm:grid-cols-2 gap-4">
-                <button
-                  type="button"
-                  onClick={() => { setStatut("etudiant"); setProfession(""); }}
-                  className={`px-6 py-4 border-2 text-left transition-all duration-300 ${
-                    statut === "etudiant"
-                      ? "border-foreground bg-foreground text-background"
-                      : "border-foreground hover:bg-foreground/5"
-                  }`}
-                >
-                  <span className="text-sm font-medium uppercase tracking-wider">Étudiant(e)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setStatut("personnel"); setAnneeEtude(""); }}
-                  className={`px-6 py-4 border-2 text-left transition-all duration-300 ${
-                    statut === "personnel"
-                      ? "border-foreground bg-foreground text-background"
-                      : "border-foreground hover:bg-foreground/5"
-                  }`}
-                >
-                  <span className="text-sm font-medium uppercase tracking-wider">Personnel médical</span>
-                </button>
-              </div>
+              <select
+                value={anneeEtude}
+                onChange={(e) => setAnneeEtude(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-foreground bg-transparent focus:outline-none focus:border-foreground/50 transition-colors appearance-none cursor-pointer"
+                required
+              >
+                <option value="">Sélectionnez votre année</option>
+                <option value="1ère année">1ère année</option>
+                <option value="2ème année">2ème année</option>
+                <option value="3ème année">3ème année</option>
+              </select>
             </div>
 
-            {/* Conditional: Année d'étude */}
-            {statut === "etudiant" && (
-              <div className="space-y-2 animate-slide-up">
-                <label className="text-sm font-medium uppercase tracking-wider">
-                  Année d'étude <span className="text-destructive">*</span>
+            {/* Formations */}
+            <div className="space-y-4">
+              <label className="text-sm font-medium uppercase tracking-wider">
+                Quelle formation souhaitez-vous suivre ? <span className="text-destructive">*</span>
+              </label>
+              <div className="space-y-3">
+                <label className="flex items-center gap-3 px-4 py-3 border-2 border-foreground cursor-pointer transition-all duration-300 hover:bg-foreground/5">
+                  <input
+                    type="checkbox"
+                    checked={formations.includes("sutures")}
+                    onChange={() => toggleFormation("sutures")}
+                    className="w-5 h-5 accent-foreground cursor-pointer"
+                  />
+                  <span className="text-sm font-medium">Les sutures médicales</span>
                 </label>
-                <select
-                  value={anneeEtude}
-                  onChange={(e) => setAnneeEtude(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-foreground bg-transparent focus:outline-none focus:border-foreground/50 transition-colors appearance-none cursor-pointer"
-                  required
-                >
-                  <option value="">Sélectionnez votre année</option>
-                  <option value="1ère année">1ère année</option>
-                  <option value="2ème année">2ème année</option>
-                  <option value="3ème année">3ème année</option>
-                </select>
-              </div>
-            )}
-
-            {/* Conditional: Profession */}
-            {statut === "personnel" && (
-              <div className="space-y-2 animate-slide-up">
-                <label className="text-sm font-medium uppercase tracking-wider">
-                  Profession / Spécialité / Domaine de travail <span className="text-destructive">*</span>
+                <label className="flex items-center gap-3 px-4 py-3 border-2 border-foreground cursor-pointer transition-all duration-300 hover:bg-foreground/5">
+                  <input
+                    type="checkbox"
+                    checked={formations.includes("platrage")}
+                    onChange={() => toggleFormation("platrage")}
+                    className="w-5 h-5 accent-foreground cursor-pointer"
+                  />
+                  <span className="text-sm font-medium">Le plâtrage (pose de plâtre)</span>
                 </label>
-                <input
-                  type="text"
-                  value={profession}
-                  onChange={(e) => setProfession(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-foreground bg-transparent focus:outline-none focus:border-foreground/50 transition-colors"
-                  placeholder="Ex: Infirmier(e), Médecin, etc."
-                  required
-                />
               </div>
-            )}
+            </div>
 
             {/* Error */}
             {error && (
