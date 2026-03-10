@@ -20,11 +20,17 @@ const Survey = () => {
   const [anneeEtude, setAnneeEtude] = useState("");
   const [formations, setFormations] = useState<Formation[]>([]);
 
+  const toggleFormation = (f: Formation) => {
+    setFormations((prev) =>
+      prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f]
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    if (!nom || !prenom || !email || !telephone || !statut) {
+    if (!nom || !prenom || !email || !telephone || !anneeEtude) {
       setError("Veuillez remplir tous les champs obligatoires.");
       return;
     }
@@ -35,13 +41,8 @@ const Survey = () => {
       return;
     }
 
-    if (statut === "etudiant" && !anneeEtude) {
-      setError("Veuillez sélectionner votre année d'étude.");
-      return;
-    }
-
-    if (statut === "personnel" && !profession) {
-      setError("Veuillez indiquer votre profession / spécialité.");
+    if (formations.length === 0) {
+      setError("Veuillez sélectionner au moins une formation.");
       return;
     }
 
@@ -54,9 +55,8 @@ const Survey = () => {
           prenom: prenom.trim().substring(0, 100),
           email: email.trim().substring(0, 255),
           telephone: telephone.trim().substring(0, 20),
-          statut,
-          anneeEtude: statut === "etudiant" ? anneeEtude : "",
-          profession: statut === "personnel" ? profession.trim().substring(0, 200) : "",
+          anneeEtude,
+          formations,
         },
       });
 
