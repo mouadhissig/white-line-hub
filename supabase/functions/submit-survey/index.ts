@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const ALLOWED_ORIGINS = [
   "https://whitelineissig.me",
@@ -66,9 +67,28 @@ serve(async (req) => {
     // Sanitize inputs
     const cleanNom = nom.trim().substring(0, 100);
     const cleanPrenom = prenom.trim().substring(0, 100);
-    const cleanEmail = email.trim().substring(0, 255);
+    const cleanEmail = email.trim().substring(0, 255).toLowerCase();
     const cleanTelephone = telephone.trim().substring(0, 20);
     const cleanAnneeEtude = anneeEtude.trim().substring(0, 50);
+
+    // Check for duplicate submission
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const { data: existing } = await supabase
+      .from("survey_submissions")
+      .select("id")
+      .eq("email", cleanEmail)
+      .maybeSingle();
+
+    if (existing) {
+      return new Response(
+        JSON.stringify({ error: "Vous avez déjà soumis votre inscription avec cet e-mail." }),
+        { status: 409, headers }
+      );
+    }
 
     const formationLabels: Record<string, string> = {
       sutures: "Les sutures médicales",
@@ -102,6 +122,16 @@ serve(async (req) => {
     if (!sheetResponse.ok) {
       console.error("Google Sheets error:", await sheetResponse.text());
       return new Response(JSON.stringify({ error: "Erreur d'enregistrement." }), { status: 500, headers });
+    }
+
+    // Record submission to prevent duplicates
+    const { error: insertError } = await supabase
+      .from("survey_submissions")
+      .insert({ email: cleanEmail });
+
+    if (insertError) {
+      console.error("Insert submission error:", insertError);
+      // Don't fail the request since Google Sheets already has the data
     }
 
     return new Response(JSON.stringify({ success: true }), { status: 200, headers });
