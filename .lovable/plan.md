@@ -1,70 +1,50 @@
 
 
-# Redesigned Ramadan Theme
+# Admin Reset Button on Survey Page
 
 ## Overview
 
-Two main changes: (1) Move the navbar ornaments to hang from the top-right corner in an elegant cluster (like the reference image), and (2) add subtle, transparent Ramadan decorations to white background sections throughout the page.
+Add a hidden admin panel to the survey page that appears when you visit `/survey?admin=true`. It shows a password-protected "Reset" button that clears the `survey_submissions` table so new people can register again.
 
----
+## Changes
 
-## 1. Navbar Ornaments -- Right-Side Cluster
+### 1. Create database table (migration)
 
-**Current problem:** Ornaments are spread evenly across the full width of the navbar bottom, looking cluttered and unpolished.
+```sql
+CREATE TABLE public.survey_submissions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  email text NOT NULL UNIQUE,
+  created_at timestamptz DEFAULT now()
+);
+ALTER TABLE public.survey_submissions ENABLE ROW LEVEL SECURITY;
+```
 
-**New design:** A small cluster of 4-5 ornaments hanging from the right side of the navbar, positioned between the nav links and the right edge. The arrangement matches the reference image:
-- A lantern (center-right)
-- A crescent moon
-- Two small stars (different sizes)
-- Connected by thin wires hanging from a short horizontal line
+### 2. New edge function: `supabase/functions/reset-survey/index.ts`
 
-The ornaments will be positioned using `absolute` inside the navbar container, anchored to the right. They will still swing gently and glow on hover. The horizontal wire spanning the full width will be removed.
+- Accepts POST with an `adminKey` in the body
+- Validates it against a `SURVEY_ADMIN_KEY` secret
+- If valid, truncates `survey_submissions` table using service role client
+- Returns success/error JSON
 
-**Responsive:** On mobile, the ornaments will be hidden (or reduced to 2-3 smaller ones) to avoid interfering with the hamburger menu.
+### 3. Add `SURVEY_ADMIN_KEY` secret
 
-| File | Change |
-|------|--------|
-| `src/components/Navbar.tsx` | Replace the full-width wire + 10 ornaments with a compact right-side cluster of ~4-5 ornaments hanging from a short decorative line |
+- Use `add_secret` tool to request admin password from you
 
----
+### 4. Update `supabase/functions/submit-survey/index.ts`
 
-## 2. Ramadan Background Decorations on White Sections
+- After validation, check if email already exists in `survey_submissions`
+- If found → return 409 "Vous avez déjà soumis votre inscription"
+- If not found → insert email, then proceed to Google Sheets
 
-Add subtle, semi-transparent Ramadan motifs (crescents, stars, lantern silhouettes) as background decorations on sections with white backgrounds: About, Goals, and Contact.
+### 5. Update `src/pages/Survey.tsx`
 
-These will be rendered as absolutely-positioned SVGs with very low opacity (0.03-0.06) placed in corners or edges of each section, giving an elegant, muted Ramadan atmosphere without distracting from content.
+- Read `?admin=true` from URL search params
+- If admin mode: show a small panel at the top with a password input and a "Réinitialiser les inscriptions" button
+- On click: call the `reset-survey` edge function with the entered password
+- Show success/error toast
+- Handle 409 errors from submit to show "already registered" message
 
-| File | Change |
-|------|--------|
-| `src/components/RamadanDecor.tsx` | New component: reusable background decoration layer with positioned Ramadan SVG motifs |
-| `src/components/About.tsx` | Wrap section content with `relative` positioning and add `RamadanDecor` |
-| `src/components/Goals.tsx` | Same treatment |
-| `src/components/Contact.tsx` | Same treatment |
+### 6. Config
 
----
-
-## Technical Details
-
-### Navbar changes (`src/components/Navbar.tsx`)
-
-- Remove the full-width bottom wire and the 10-ornament spread
-- Add a new `div` positioned `absolute right-4 top-full` (or similar) containing 4-5 ornaments
-- Each ornament hangs from a vertical wire of varying length, arranged in a small cluster spanning roughly 120-150px wide
-- Keep the existing SVG components (Lantern, Crescent, Star) -- they look good
-- Layout: star -- crescent -- lantern -- star (left to right), with the lantern being the tallest/most prominent
-- Keep swing animation and hover glow
-- Hide on mobile menu open
-
-### RamadanDecor component (`src/components/RamadanDecor.tsx`)
-
-- Renders 3-5 absolutely-positioned SVG elements (crescents, stars, lanterns) at various corners
-- All elements have opacity between 0.03 and 0.06 (very subtle)
-- Uses the same gold color `#D4A84B` to maintain thematic consistency
-- Sizes range from 80px to 200px for visual variety
-- Accepts a `variant` prop to slightly vary placement per section so decorations don't repeat identically
-- `pointer-events-none` to avoid interfering with content
-
-### CSS changes (`src/index.css`)
-
-- Keep existing `ramadan-swing` and `ramadan-glow` animations (no changes needed)
+- Add `reset-survey` to `supabase/config.toml` with `verify_jwt = false`
 
