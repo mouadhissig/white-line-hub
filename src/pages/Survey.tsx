@@ -1,14 +1,65 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { ArrowLeft, Send, CheckCircle2 } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { ArrowLeft, Send, CheckCircle2, ShieldAlert } from "lucide-react";
 import logo from "@/assets/logo-white.png";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/Navbar";
 import MandalaDecor from "@/components/MandalaDecor";
+import { toast } from "@/hooks/use-toast";
 
 type Formation = "sutures" | "platrage";
 
+const AdminPanel = () => {
+  const [adminKey, setAdminKey] = useState("");
+  const [isResetting, setIsResetting] = useState(false);
+
+  const handleReset = async () => {
+    if (!adminKey) return;
+    setIsResetting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("reset-survey", {
+        body: { adminKey },
+      });
+      if (error) throw error;
+      toast({ title: "Succès", description: "Les inscriptions ont été réinitialisées." });
+      setAdminKey("");
+    } catch {
+      toast({ title: "Erreur", description: "Mot de passe incorrect ou erreur serveur.", variant: "destructive" });
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto mb-8 p-4 border-2 border-destructive/50 bg-destructive/5 relative z-10">
+      <div className="flex items-center gap-2 mb-3">
+        <ShieldAlert size={20} className="text-destructive" />
+        <span className="text-sm font-medium uppercase tracking-wider text-destructive">Admin</span>
+      </div>
+      <div className="flex gap-3">
+        <input
+          type="password"
+          value={adminKey}
+          onChange={(e) => setAdminKey(e.target.value)}
+          placeholder="Mot de passe admin"
+          className="flex-1 px-4 py-2 border-2 border-foreground bg-transparent focus:outline-none focus:border-foreground/50 transition-colors text-sm"
+        />
+        <button
+          onClick={handleReset}
+          disabled={isResetting || !adminKey}
+          className="px-4 py-2 bg-destructive text-destructive-foreground text-sm uppercase tracking-wider hover:bg-destructive/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isResetting ? "..." : "Réinitialiser"}
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const Survey = () => {
+  const [searchParams] = useSearchParams();
+  const isAdmin = searchParams.get("admin") === "true";
+
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -49,7 +100,7 @@ const Survey = () => {
     setIsSubmitting(true);
 
     try {
-      const { error: fnError } = await supabase.functions.invoke("submit-survey", {
+      const res = await supabase.functions.invoke("submit-survey", {
         body: {
           nom: nom.trim().substring(0, 100),
           prenom: prenom.trim().substring(0, 100),
@@ -60,7 +111,16 @@ const Survey = () => {
         },
       });
 
-      if (fnError) throw new Error("Erreur lors de l'envoi.");
+      // Check for 409 duplicate
+      if (res.error) {
+        const errorBody = res.data;
+        if (errorBody?.error?.includes("déjà soumis")) {
+          setError("Vous avez déjà soumis votre inscription avec cet e-mail.");
+          return;
+        }
+        throw new Error("Erreur lors de l'envoi.");
+      }
+
       setSubmitted(true);
     } catch {
       setError("Une erreur s'est produite. Veuillez réessayer.");
@@ -95,10 +155,11 @@ const Survey = () => {
     <div className="min-h-screen bg-background relative">
       <Navbar />
 
-      {/* Form */}
       <main className="pt-28 pb-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         <MandalaDecor theme="light" variant="b" />
         <div className="max-w-2xl mx-auto relative z-10">
+          {isAdmin && <AdminPanel />}
+
           <div className="text-center mb-12">
             <h1 className="text-4xl sm:text-5xl font-display tracking-wider mb-4">INSCRIPTION</h1>
             <div className="w-16 h-1 bg-foreground mx-auto mb-6" />
@@ -108,7 +169,6 @@ const Survey = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Nom & Prénom */}
             <div className="grid sm:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-medium uppercase tracking-wider">
@@ -138,7 +198,6 @@ const Survey = () => {
               </div>
             </div>
 
-            {/* Email */}
             <div className="space-y-2">
               <label className="text-sm font-medium uppercase tracking-wider">
                 Adresse e-mail <span className="text-destructive">*</span>
@@ -153,7 +212,6 @@ const Survey = () => {
               />
             </div>
 
-            {/* Téléphone */}
             <div className="space-y-2">
               <label className="text-sm font-medium uppercase tracking-wider">
                 Numéro de téléphone <span className="text-destructive">*</span>
@@ -168,7 +226,6 @@ const Survey = () => {
               />
             </div>
 
-            {/* Année d'étude */}
             <div className="space-y-2">
               <label className="text-sm font-medium uppercase tracking-wider">
                 Année d'étude <span className="text-destructive">*</span>
@@ -186,7 +243,6 @@ const Survey = () => {
               </select>
             </div>
 
-            {/* Formations */}
             <div className="space-y-4">
               <label className="text-sm font-medium uppercase tracking-wider">
                 Quelle formation souhaitez-vous suivre ? <span className="text-destructive">*</span>
@@ -213,12 +269,10 @@ const Survey = () => {
               </div>
             </div>
 
-            {/* Error */}
             {error && (
               <p className="text-destructive text-sm font-medium">{error}</p>
             )}
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={isSubmitting}
