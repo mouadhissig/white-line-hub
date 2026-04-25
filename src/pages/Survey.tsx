@@ -95,14 +95,16 @@ const Survey = () => {
   });
 
   const fetchCounts = async () => {
-    const { data, error } = await supabase
-      .from("survey_submissions")
-      .select("atelier");
-    if (error || !data) return;
+    const { data, error } = await supabase.rpc("get_atelier_counts");
+    if (error) {
+      console.error("Failed to fetch atelier counts:", error);
+      return;
+    }
+    if (!data) return;
     const next: Record<Atelier, number> = { atelier1: 0, atelier2: 0, atelier3: 0, atelier4: 0 };
     for (const row of data) {
       const a = row.atelier as Atelier;
-      if (a in next) next[a]++;
+      if (a in next) next[a] = Number(row.count);
     }
     setCounts(next);
   };
