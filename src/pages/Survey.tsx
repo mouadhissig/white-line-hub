@@ -6,12 +6,15 @@ import Navbar from "@/components/Navbar";
 import MandalaDecor from "@/components/MandalaDecor";
 import { toast } from "@/hooks/use-toast";
 
+const WEBHOOK_URL =
+  "https://script.google.com/macros/s/AKfycbxGMgOeo5O7G6gcZn1o7XzeETYikH1GKoiekQ9VPUeyUhTsJhEdgCdskkWOxEfY4mgxKA/exec";
+
 type Statut = "etudiant" | "personnel" | "exterieur" | "comite";
 type Niveau = "1ere" | "2eme" | "3eme";
 type Conference = "confA" | "confB" | "confC" | "confD" | "tableRonde";
 type Atelier = "atelier1" | "atelier2" | "atelier3" | "atelier4";
 
-const ATELIER_CAP = 20;
+const DEFAULT_ATELIER_CAP = 20;
 
 const ATELIERS: { id: Atelier; label: string }[] = [
   { id: "atelier1", label: "Atelier 1 – « Pansements Modernes »" },
@@ -90,36 +93,39 @@ const Survey = () => {
   const [confirmAtelier, setConfirmAtelier] = useState(false);
 
   // Live counts per atelier
+  const [atelierCap, setAtelierCap] = useState(DEFAULT_ATELIER_CAP);
   const [counts, setCounts] = useState<Record<Atelier, number>>({
     atelier1: 0, atelier2: 0, atelier3: 0, atelier4: 0,
   });
 
   const fetchCounts = async () => {
-    const { data, error } = await supabase.rpc("get_atelier_counts");
-    if (error) {
-      console.error("Failed to fetch atelier counts:", error);
-      return;
+    try {
+      const res = await fetch(`${WEBHOOK_URL}?action=counts`);
+      if (!res.ok) {
+        console.error("Erreur HTTP lors du chargement des compteurs:", res.status);
+        return;
+      }
+      const json = await res.json();
+      if (!json.success || !json.counts) {
+        console.error("Réponse inattendue du webhook:", json);
+        return;
+      }
+      const { counts: c, cap } = json as { success: boolean; cap?: number; counts: Record<string, number> };
+      const next: Record<Atelier, number> = { atelier1: 0, atelier2: 0, atelier3: 0, atelier4: 0 };
+      for (const a of Object.keys(next) as Atelier[]) {
+        if (typeof c[a] === "number") next[a] = c[a];
+      }
+      setCounts(next);
+      if (typeof cap === "number") setAtelierCap(cap);
+    } catch (err) {
+      console.error("Impossible de récupérer les compteurs:", err);
     }
-    if (!data) return;
-    const next: Record<Atelier, number> = { atelier1: 0, atelier2: 0, atelier3: 0, atelier4: 0 };
-    for (const row of data) {
-      const a = row.atelier as Atelier;
-      if (a in next) next[a] = Number(row.count);
-    }
-    setCounts(next);
   };
 
   useEffect(() => {
     fetchCounts();
-    const channel = supabase
-      .channel("survey-counts")
-      .on("postgres_changes", { event: "*", schema: "public", table: "survey_submissions" }, () => {
-        fetchCounts();
-      })
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    const intervalId = setInterval(fetchCounts, 10000);
+    return () => clearInterval(intervalId);
   }, []);
 
   const toggleConference = (c: Conference) => {
@@ -147,7 +153,7 @@ const Survey = () => {
       setError("Veuillez sélectionner un atelier.");
       return;
     }
-    if (counts[atelier] >= ATELIER_CAP) {
+    if (counts[atelier] >= atelierCap) {
       setError("Cet atelier est complet. Veuillez en choisir un autre.");
       return;
     }
@@ -158,36 +164,29 @@ const Survey = () => {
 
     setIsSubmitting(true);
     try {
-      const res = await fetch("/.netlify/functions/submit-survey", {
+      const atelierObj = ATELIERS.find((a) => a.id === atelier);
+      await fetch(WEBHOOK_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain" },
         body: JSON.stringify({
+          date: new Date().toISOString(),
           nomPrenom: nomPrenom.trim().substring(0, 200),
-          email: email.trim().substring(0, 255),
+          email: email.trim().toLowerCase().substring(0, 255),
           statut,
-          niveauEtude: statut === "etudiant" ? niveauEtude : null,
-          conferences,
-          atelier,
+          niveauEtude: statut === "etudiant" ? niveauEtude : "",
+          conferences: conferences.join(", "),
+          atelierId: atelier,
+          atelierLabel: atelierObj?.label ?? atelier,
+          atelier: atelier,
         }),
       });
 
-      let data: { success?: boolean; error?: string } = {};
-      try {
-        data = await res.json();
-      } catch (parseErr) {
-        console.error("Réponse non-JSON du serveur:", parseErr);
-      }
-
-      if (!res.ok) {
-        const msg = data?.error || `Erreur serveur (HTTP ${res.status}).`;
-        console.error("Échec de la soumission:", msg, "statut HTTP:", res.status);
-        setError(msg);
-        return;
-      }
-
       setSubmitted(true);
+      // Small delay to allow the Apps Script backend to finish writing before re-fetching counts
+      setTimeout(fetchCounts, 800);
     } catch (err) {
-      console.error("Erreur réseau lors de la soumission:", err);
+      console.error("Erreur lors de la soumission:", err);
       setError("Une erreur réseau s'est produite. Veuillez vérifier votre connexion et réessayer.");
     } finally {
       setIsSubmitting(false);
@@ -356,7 +355,7 @@ const Survey = () => {
               <div className="space-y-3">
                 {ATELIERS.map((a) => {
                   const count = counts[a.id];
-                  const isFull = count >= ATELIER_CAP;
+                  const isFull = count >= atelierCap;
                   return (
                     <label
                       key={a.id}
@@ -384,7 +383,7 @@ const Survey = () => {
                             : "border-foreground/40 text-foreground/70"
                         }`}
                       >
-                        {isFull ? "COMPLET" : `${count}/${ATELIER_CAP}`}
+                        {isFull ? "COMPLET" : `${count}/${atelierCap}`}
                       </span>
                     </label>
                   );
