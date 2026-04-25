@@ -156,29 +156,37 @@ const Survey = () => {
 
     setIsSubmitting(true);
     try {
-      const res = await supabase.functions.invoke("submit-survey", {
-        body: {
+      const res = await fetch("/.netlify/functions/submit-survey", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           nomPrenom: nomPrenom.trim().substring(0, 200),
           email: email.trim().substring(0, 255),
           statut,
           niveauEtude: statut === "etudiant" ? niveauEtude : null,
           conferences,
           atelier,
-        },
+        }),
       });
 
-      if (res.error) {
-        const msg = (res.data as { error?: string } | null)?.error;
-        if (msg) {
-          setError(msg);
-          return;
-        }
-        throw new Error("Erreur lors de l'envoi.");
+      let data: { success?: boolean; error?: string } = {};
+      try {
+        data = await res.json();
+      } catch (parseErr) {
+        console.error("Réponse non-JSON du serveur:", parseErr);
+      }
+
+      if (!res.ok) {
+        const msg = data?.error || `Erreur serveur (HTTP ${res.status}).`;
+        console.error("Échec de la soumission:", msg, "statut HTTP:", res.status);
+        setError(msg);
+        return;
       }
 
       setSubmitted(true);
-    } catch {
-      setError("Une erreur s'est produite. Veuillez réessayer.");
+    } catch (err) {
+      console.error("Erreur réseau lors de la soumission:", err);
+      setError("Une erreur réseau s'est produite. Veuillez vérifier votre connexion et réessayer.");
     } finally {
       setIsSubmitting(false);
     }
