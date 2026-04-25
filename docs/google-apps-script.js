@@ -5,8 +5,18 @@
  * After each redeploy you will get a new URL – update WEBHOOK_URL in
  * src/pages/Survey.tsx accordingly.
  *
+ * Current deployed URL (update Survey.tsx if this changes):
+ *   https://script.google.com/macros/s/AKfycbwesnJHXxpdBKc_7-V6OzeyEzQVvSAr9fTCGi_57yf9RERJBcE87oOLLYk9oS3QYRS53A/exec
+ *
  * POST  → records a new registration in the active sheet.
  * GET?action=counts → returns JSON { success, cap, counts: { atelier1..4 } }.
+ *
+ * Sheet columns (auto-created on first submission):
+ *   Date | Nom et prénom | Email | Statut | Niveau d'étude | Conférences | AtelierId | Atelier
+ *
+ * The frontend sends both `atelierId` (stable id, e.g. "atelier1") and
+ * `atelierLabel` (human-readable label). The counts endpoint reads `AtelierId`
+ * first; it falls back to mapping the `Atelier` label for backward compatibility.
  */
 
 /** Maximum registrations per atelier. Keep in sync with DEFAULT_ATELIER_CAP in src/pages/Survey.tsx. */

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Send, CheckCircle2, ShieldAlert } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,7 +7,7 @@ import MandalaDecor from "@/components/MandalaDecor";
 import { toast } from "@/hooks/use-toast";
 
 const WEBHOOK_URL =
-  "https://script.google.com/macros/s/AKfycbxGMgOeo5O7G6gcZn1o7XzeETYikH1GKoiekQ9VPUeyUhTsJhEdgCdskkWOxEfY4mgxKA/exec";
+  "https://script.google.com/macros/s/AKfycbwesnJHXxpdBKc_7-V6OzeyEzQVvSAr9fTCGi_57yf9RERJBcE87oOLLYk9oS3QYRS53A/exec";
 
 type Statut = "etudiant" | "personnel" | "exterieur" | "comite";
 type Niveau = "1ere" | "2eme" | "3eme";
@@ -97,17 +97,29 @@ const Survey = () => {
   const [counts, setCounts] = useState<Record<Atelier, number>>({
     atelier1: 0, atelier2: 0, atelier3: 0, atelier4: 0,
   });
+  const [countsLoading, setCountsLoading] = useState(true);
+  const [countsError, setCountsError] = useState(false);
 
-  const fetchCounts = async () => {
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const fetchCounts = useCallback(async (retries = 2): Promise<void> => {
     try {
-      const res = await fetch(`${WEBHOOK_URL}?action=counts`);
+      const res = await fetch(`${WEBHOOK_URL}?action=counts&t=${Date.now()}`, {
+        cache: "no-store",
+      });
       if (!res.ok) {
         console.error("Erreur HTTP lors du chargement des compteurs:", res.status);
+        if (retries > 0) {
+          await new Promise((r) => setTimeout(r, 1000));
+          return fetchCounts(retries - 1);
+        }
+        setCountsError(true);
         return;
       }
       const json = await res.json();
       if (!json.success || !json.counts) {
         console.error("Réponse inattendue du webhook:", json);
+        setCountsError(true);
         return;
       }
       const { counts: c, cap } = json as { success: boolean; cap?: number; counts: Record<string, number> };
@@ -117,16 +129,45 @@ const Survey = () => {
       }
       setCounts(next);
       if (typeof cap === "number") setAtelierCap(cap);
+      setCountsError(false);
     } catch (err) {
       console.error("Impossible de récupérer les compteurs:", err);
+      if (retries > 0) {
+        await new Promise((r) => setTimeout(r, 1000));
+        return fetchCounts(retries - 1);
+      }
+      setCountsError(true);
+    } finally {
+      setCountsLoading(false);
     }
-  };
+  }, []);
+
+  const startNormalPolling = useCallback(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(() => fetchCounts(), 10000);
+  }, [fetchCounts]);
+
+  const startBurstPolling = useCallback(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    let burstCount = 0;
+    const burstInterval = setInterval(() => {
+      fetchCounts();
+      burstCount++;
+      if (burstCount >= 5) {
+        clearInterval(burstInterval);
+        startNormalPolling();
+      }
+    }, 2000);
+    intervalRef.current = burstInterval;
+  }, [fetchCounts, startNormalPolling]);
 
   useEffect(() => {
     fetchCounts();
-    const intervalId = setInterval(fetchCounts, 10000);
-    return () => clearInterval(intervalId);
-  }, []);
+    startNormalPolling();
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [fetchCounts, startNormalPolling]);
 
   const toggleConference = (c: Conference) => {
     setConferences((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
@@ -182,9 +223,12 @@ const Survey = () => {
         }),
       });
 
+      // Optimistic update: increment local count immediately
+      setCounts((prev) => ({ ...prev, [atelier]: prev[atelier] + 1 }));
+
       setSubmitted(true);
-      // Small delay to allow the Apps Script backend to finish writing before re-fetching counts
-      setTimeout(fetchCounts, 800);
+      // Burst-poll every 2s for ~10s to sync the real count quickly, then return to 10s
+      startBurstPolling();
     } catch (err) {
       console.error("Erreur lors de la soumission:", err);
       setError("Une erreur réseau s'est produite. Veuillez vérifier votre connexion et réessayer.");
@@ -352,6 +396,12 @@ const Survey = () => {
               <p className="text-sm text-muted-foreground">
                 L'Institut – à partir de 14h30. ⚠️ La présence en atelier est obligatoire. Veuillez choisir un seul atelier.
               </p>
+              {countsLoading && (
+                <p className="text-xs text-muted-foreground">Chargement des places disponibles…</p>
+              )}
+              {!countsLoading && countsError && (
+                <p className="text-xs text-destructive">Impossible de charger les compteurs – les données affichées peuvent être obsolètes.</p>
+              )}
               <div className="space-y-3">
                 {ATELIERS.map((a) => {
                   const count = counts[a.id];
