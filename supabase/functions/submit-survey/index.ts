@@ -28,6 +28,36 @@ function getCorsHeaders(req: Request) {
   };
 }
 
+const VALID_STATUTS = ["etudiant", "personnel", "exterieur", "comite"];
+const VALID_NIVEAUX = ["1ere", "2eme", "3eme"];
+const VALID_CONFERENCES = ["confA", "confB", "confC", "confD", "tableRonde"];
+const VALID_ATELIERS = ["atelier1", "atelier2", "atelier3", "atelier4"];
+
+const STATUT_LABELS: Record<string, string> = {
+  etudiant: "Étudiant",
+  personnel: "Personnel de la faculté",
+  exterieur: "Extérieur",
+  comite: "Membre du comité d'organisation",
+};
+const NIVEAU_LABELS: Record<string, string> = {
+  "1ere": "1ère année",
+  "2eme": "2ème année",
+  "3eme": "3ème année",
+};
+const CONFERENCE_LABELS: Record<string, string> = {
+  confA: "Conférence A – ADHD",
+  confB: "Conférence B – Interférences Pré-analytiques",
+  confC: "Conférence C – ECG Normale",
+  confD: "Conférence D – Réanimation Actualisée",
+  tableRonde: "Table Ronde",
+};
+const ATELIER_LABELS: Record<string, string> = {
+  atelier1: "Atelier 1 – Pansements Modernes",
+  atelier2: "Atelier 2 – Suture",
+  atelier3: "Atelier 3 – Plâtre",
+  atelier4: "Atelier 4 – Réanimation Cardio-Respiratoire",
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: getCorsHeaders(req) });
@@ -36,102 +66,88 @@ serve(async (req) => {
   const headers = getCorsHeaders(req);
 
   try {
-    const { nom, prenom, email, telephone, anneeEtude, formations } = await req.json();
+    const { nomPrenom, email, statut, niveauEtude, conferences, atelier } = await req.json();
 
-    // Validate required fields
-    if (!nom || !prenom || !email || !telephone || !anneeEtude || !formations || !Array.isArray(formations) || formations.length === 0) {
-      return new Response(JSON.stringify({ error: "Champs obligatoires manquants." }), { status: 400, headers });
+    // Validation
+    if (typeof nomPrenom !== "string" || nomPrenom.trim().length === 0 || nomPrenom.length > 200) {
+      return new Response(JSON.stringify({ error: "Nom et prénom invalides." }), { status: 400, headers });
     }
-
-    // Server-side validation
-    if (typeof nom !== 'string' || nom.trim().length === 0 || nom.length > 100) {
-      return new Response(JSON.stringify({ error: "Nom invalide (max 100 caractères)." }), { status: 400, headers });
-    }
-    if (typeof prenom !== 'string' || prenom.trim().length === 0 || prenom.length > 100) {
-      return new Response(JSON.stringify({ error: "Prénom invalide (max 100 caractères)." }), { status: 400, headers });
-    }
-    if (typeof email !== 'string' || email.length > 255 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (typeof email !== "string" || email.length > 255 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return new Response(JSON.stringify({ error: "Adresse e-mail invalide." }), { status: 400, headers });
     }
-    if (typeof telephone !== 'string' || telephone.trim().length === 0 || telephone.length > 20) {
-      return new Response(JSON.stringify({ error: "Téléphone invalide (max 20 caractères)." }), { status: 400, headers });
+    if (!VALID_STATUTS.includes(statut)) {
+      return new Response(JSON.stringify({ error: "Statut invalide." }), { status: 400, headers });
     }
-    if (typeof anneeEtude !== 'string' || anneeEtude.length > 50) {
-      return new Response(JSON.stringify({ error: "Année d'étude invalide." }), { status: 400, headers });
+    if (statut === "etudiant" && !VALID_NIVEAUX.includes(niveauEtude)) {
+      return new Response(JSON.stringify({ error: "Niveau d'étude invalide." }), { status: 400, headers });
     }
-    const validFormations = ["sutures", "platrage"];
-    if (!formations.every((f: string) => validFormations.includes(f))) {
-      return new Response(JSON.stringify({ error: "Formation invalide." }), { status: 400, headers });
+    if (!Array.isArray(conferences) || !conferences.every((c: string) => VALID_CONFERENCES.includes(c))) {
+      return new Response(JSON.stringify({ error: "Conférences invalides." }), { status: 400, headers });
+    }
+    if (!VALID_ATELIERS.includes(atelier)) {
+      return new Response(JSON.stringify({ error: "Atelier invalide." }), { status: 400, headers });
     }
 
-    // Sanitize inputs
-    const cleanNom = nom.trim().substring(0, 100);
-    const cleanPrenom = prenom.trim().substring(0, 100);
-    const cleanEmail = email.trim().substring(0, 255).toLowerCase();
-    const cleanTelephone = telephone.trim().substring(0, 20);
-    const cleanAnneeEtude = anneeEtude.trim().substring(0, 50);
+    const cleanNomPrenom = nomPrenom.trim().substring(0, 200);
+    const cleanEmail = email.trim().toLowerCase().substring(0, 255);
+    const cleanNiveau = statut === "etudiant" ? niveauEtude : null;
 
-    // Check for duplicate submission
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { data: existing } = await supabase
-      .from("survey_submissions")
-      .select("id")
-      .eq("email", cleanEmail)
-      .maybeSingle();
-
-    if (existing) {
-      return new Response(
-        JSON.stringify({ error: "Vous avez déjà soumis votre inscription avec cet e-mail." }),
-        { status: 409, headers }
-      );
-    }
-
-    const formationLabels: Record<string, string> = {
-      sutures: "Les sutures médicales",
-      platrage: "Le plâtrage (pose de plâtre)",
-    };
-    const formationsText = formations.map((f: string) => formationLabels[f] || f).join(", ");
-
-    const GOOGLE_SHEETS_WEBHOOK_URL = Deno.env.get("GOOGLE_SHEETS_WEBHOOK_URL");
-    if (!GOOGLE_SHEETS_WEBHOOK_URL) {
-      console.error("GOOGLE_SHEETS_WEBHOOK_URL not configured");
-      return new Response(JSON.stringify({ error: "Configuration serveur manquante." }), { status: 500, headers });
-    }
-
-    const now = new Date().toISOString();
-
-    // Send to Google Sheets via Apps Script Web App
-    const sheetResponse = await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        nom: cleanNom,
-        prenom: cleanPrenom,
-        email: cleanEmail,
-        telephone: cleanTelephone,
-        anneeEtude: cleanAnneeEtude,
-        formations: formationsText,
-        date: now,
-      }),
+    // Atomic registration with capacity check
+    const { data: result, error: rpcError } = await supabase.rpc("register_submission", {
+      p_nom_prenom: cleanNomPrenom,
+      p_email: cleanEmail,
+      p_statut: statut,
+      p_niveau_etude: cleanNiveau,
+      p_conferences: conferences,
+      p_atelier: atelier,
     });
 
-    if (!sheetResponse.ok) {
-      console.error("Google Sheets error:", await sheetResponse.text());
+    if (rpcError) {
+      console.error("RPC error:", rpcError);
       return new Response(JSON.stringify({ error: "Erreur d'enregistrement." }), { status: 500, headers });
     }
 
-    // Record submission to prevent duplicates
-    const { error: insertError } = await supabase
-      .from("survey_submissions")
-      .insert({ email: cleanEmail });
+    if (!result?.success) {
+      if (result?.error === "atelier_full") {
+        return new Response(
+          JSON.stringify({ error: "Cet atelier est complet (20/20). Veuillez en choisir un autre." }),
+          { status: 409, headers }
+        );
+      }
+      if (result?.error === "duplicate_email") {
+        return new Response(
+          JSON.stringify({ error: "Vous avez déjà soumis votre inscription avec cet e-mail." }),
+          { status: 409, headers }
+        );
+      }
+      return new Response(JSON.stringify({ error: "Inscription refusée." }), { status: 400, headers });
+    }
 
-    if (insertError) {
-      console.error("Insert submission error:", insertError);
-      // Don't fail the request since Google Sheets already has the data
+    // Forward to Google Sheets (best-effort)
+    const GOOGLE_SHEETS_WEBHOOK_URL = Deno.env.get("GOOGLE_SHEETS_WEBHOOK_URL");
+    if (GOOGLE_SHEETS_WEBHOOK_URL) {
+      try {
+        await fetch(GOOGLE_SHEETS_WEBHOOK_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            nomPrenom: cleanNomPrenom,
+            email: cleanEmail,
+            statut: STATUT_LABELS[statut],
+            niveauEtude: cleanNiveau ? NIVEAU_LABELS[cleanNiveau] : "",
+            conferences: conferences.map((c: string) => CONFERENCE_LABELS[c]).join(", "),
+            atelier: ATELIER_LABELS[atelier],
+            date: new Date().toISOString(),
+          }),
+        });
+      } catch (e) {
+        console.error("Google Sheets forward failed:", e);
+      }
     }
 
     return new Response(JSON.stringify({ success: true }), { status: 200, headers });

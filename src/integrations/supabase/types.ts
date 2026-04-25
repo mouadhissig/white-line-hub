@@ -16,19 +16,34 @@ export type Database = {
     Tables: {
       survey_submissions: {
         Row: {
-          created_at: string | null
+          atelier: string
+          conferences: string[]
+          created_at: string
           email: string
           id: string
+          niveau_etude: string | null
+          nom_prenom: string
+          statut: string
         }
         Insert: {
-          created_at?: string | null
+          atelier: string
+          conferences?: string[]
+          created_at?: string
           email: string
           id?: string
+          niveau_etude?: string | null
+          nom_prenom: string
+          statut: string
         }
         Update: {
-          created_at?: string | null
+          atelier?: string
+          conferences?: string[]
+          created_at?: string
           email?: string
           id?: string
+          niveau_etude?: string | null
+          nom_prenom?: string
+          statut?: string
         }
         Relationships: []
       }
@@ -37,7 +52,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      register_submission: {
+        Args: {
+          p_atelier: string
+          p_conferences: string[]
+          p_email: string
+          p_niveau_etude: string
+          p_nom_prenom: string
+          p_statut: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
