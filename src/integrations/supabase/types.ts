@@ -52,6 +52,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_atelier_counts: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          atelier: string
+          count: number
+        }[]
+      }
       register_submission: {
         Args: {
           p_atelier: string
