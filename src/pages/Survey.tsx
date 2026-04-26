@@ -42,18 +42,25 @@ const CONFERENCES: { id: Conference; label: string }[] = [
   { id: "tableRonde", label: "Table Ronde – « Discussions Interactives avec les Experts » (11h30)" },
 ];
 
-const AdminPanel = () => {
-  const [adminKey, setAdminKey] = useState("");
+const AdminPanel = ({ currentCap }: { currentCap: number }) => {
+  const [resetKey, setResetKey] = useState("");
   const [isResetting, setIsResetting] = useState(false);
+  const [capKey, setCapKey] = useState("");
+  const [capValue, setCapValue] = useState<string>(String(currentCap));
+  const [isSavingCap, setIsSavingCap] = useState(false);
+
+  useEffect(() => {
+    setCapValue(String(currentCap));
+  }, [currentCap]);
 
   const handleReset = async () => {
-    if (!adminKey) return;
+    if (!resetKey) return;
     setIsResetting(true);
     try {
-      const { error } = await supabase.functions.invoke("reset-survey", { body: { adminKey } });
+      const { error } = await supabase.functions.invoke("reset-survey", { body: { adminKey: resetKey } });
       if (error) throw error;
       toast({ title: "Succès", description: "Les inscriptions ont été réinitialisées." });
-      setAdminKey("");
+      setResetKey("");
     } catch {
       toast({ title: "Erreur", description: "Mot de passe incorrect ou erreur serveur.", variant: "destructive" });
     } finally {
@@ -61,27 +68,83 @@ const AdminPanel = () => {
     }
   };
 
+  const handleSaveCap = async () => {
+    const cap = Number(capValue);
+    if (!capKey || !Number.isInteger(cap) || cap < 1 || cap > 1000) {
+      toast({ title: "Erreur", description: "Capacité invalide (1-1000) ou mot de passe manquant.", variant: "destructive" });
+      return;
+    }
+    setIsSavingCap(true);
+    try {
+      const { error } = await supabase.functions.invoke("update-survey-settings", {
+        body: { adminKey: capKey, atelierCap: cap },
+      });
+      if (error) throw error;
+      toast({ title: "Succès", description: `Capacité mise à jour : ${cap} par atelier.` });
+      setCapKey("");
+    } catch {
+      toast({ title: "Erreur", description: "Mot de passe incorrect ou erreur serveur.", variant: "destructive" });
+    } finally {
+      setIsSavingCap(false);
+    }
+  };
+
   return (
-    <div className="max-w-2xl mx-auto mb-8 p-4 border-2 border-destructive/50 bg-destructive/5 relative z-10">
-      <div className="flex items-center gap-2 mb-3">
+    <div className="max-w-2xl mx-auto mb-8 p-4 border-2 border-destructive/50 bg-destructive/5 relative z-10 space-y-4">
+      <div className="flex items-center gap-2">
         <ShieldAlert size={20} className="text-destructive" />
         <span className="text-sm font-medium uppercase tracking-wider text-destructive">Admin</span>
       </div>
-      <div className="flex gap-3">
-        <input
-          type="password"
-          value={adminKey}
-          onChange={(e) => setAdminKey(e.target.value)}
-          placeholder="Mot de passe admin"
-          className="flex-1 px-4 py-2 border-2 border-foreground bg-transparent focus:outline-none focus:border-foreground/50 transition-colors text-sm"
-        />
-        <button
-          onClick={handleReset}
-          disabled={isResetting || !adminKey}
-          className="px-4 py-2 bg-destructive text-destructive-foreground text-sm uppercase tracking-wider hover:bg-destructive/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isResetting ? "..." : "Réinitialiser"}
-        </button>
+
+      <div className="space-y-2">
+        <p className="text-xs uppercase tracking-wider text-destructive/80">Réinitialiser les inscriptions</p>
+        <div className="flex gap-3">
+          <input
+            type="password"
+            value={resetKey}
+            onChange={(e) => setResetKey(e.target.value)}
+            placeholder="Mot de passe admin"
+            className="flex-1 px-4 py-2 border-2 border-foreground bg-transparent focus:outline-none focus:border-foreground/50 transition-colors text-sm"
+          />
+          <button
+            onClick={handleReset}
+            disabled={isResetting || !resetKey}
+            className="px-4 py-2 bg-destructive text-destructive-foreground text-sm uppercase tracking-wider hover:bg-destructive/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isResetting ? "..." : "Réinitialiser"}
+          </button>
+        </div>
+      </div>
+
+      <div className="space-y-2 pt-2 border-t border-destructive/30">
+        <p className="text-xs uppercase tracking-wider text-destructive/80">
+          Capacité par atelier (actuelle : {currentCap})
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input
+            type="number"
+            min={1}
+            max={1000}
+            value={capValue}
+            onChange={(e) => setCapValue(e.target.value)}
+            placeholder="Capacité"
+            className="w-full sm:w-28 px-4 py-2 border-2 border-foreground bg-transparent focus:outline-none focus:border-foreground/50 transition-colors text-sm"
+          />
+          <input
+            type="password"
+            value={capKey}
+            onChange={(e) => setCapKey(e.target.value)}
+            placeholder="Mot de passe admin"
+            className="flex-1 px-4 py-2 border-2 border-foreground bg-transparent focus:outline-none focus:border-foreground/50 transition-colors text-sm"
+          />
+          <button
+            onClick={handleSaveCap}
+            disabled={isSavingCap || !capKey}
+            className="px-4 py-2 bg-foreground text-background text-sm uppercase tracking-wider hover:bg-foreground/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSavingCap ? "..." : "Enregistrer"}
+          </button>
+        </div>
       </div>
     </div>
   );
