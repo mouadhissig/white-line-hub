@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      survey_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: number
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: number
+        }
+        Relationships: []
+      }
       survey_submissions: {
         Row: {
           atelier: string
