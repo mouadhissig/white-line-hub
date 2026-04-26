@@ -12,6 +12,20 @@ type Conference = "confA" | "confB" | "confC" | "confD" | "tableRonde";
 type Atelier = "atelier1" | "atelier2" | "atelier3" | "atelier4";
 
 const DEFAULT_ATELIER_CAP = 20;
+const DEVICE_ID_KEY = "wlc_survey_device_id";
+
+const getDeviceId = (): string => {
+  try {
+    let id = localStorage.getItem(DEVICE_ID_KEY);
+    if (!id) {
+      id = (crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      localStorage.setItem(DEVICE_ID_KEY, id);
+    }
+    return id;
+  } catch {
+    return `nostorage-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  }
+};
 
 const ATELIERS: { id: Atelier; label: string }[] = [
   { id: "atelier1", label: "Atelier 1 – « Pansements Modernes »" },
