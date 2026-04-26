@@ -6,9 +6,6 @@ import Navbar from "@/components/Navbar";
 import MandalaDecor from "@/components/MandalaDecor";
 import { toast } from "@/hooks/use-toast";
 
-const WEBHOOK_URL =
-  "https://script.google.com/macros/s/AKfycbxGMgOeo5O7G6gcZn1o7XzeETYikH1GKoiekQ9VPUeyUhTsJhEdgCdskkWOxEfY4mgxKA/exec";
-
 type Statut = "etudiant" | "personnel" | "exterieur" | "comite";
 type Niveau = "1ere" | "2eme" | "3eme";
 type Conference = "confA" | "confB" | "confC" | "confD" | "tableRonde";
