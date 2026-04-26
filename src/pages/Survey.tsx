@@ -167,33 +167,29 @@ const Survey = () => {
 
     setIsSubmitting(true);
     try {
-      const { data, error: fnError } = await supabase.functions.invoke("submit-survey", {
-        body: {
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+      const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/submit-survey`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: SUPABASE_KEY,
+          Authorization: `Bearer ${SUPABASE_KEY}`,
+        },
+        body: JSON.stringify({
           nomPrenom: nomPrenom.trim().substring(0, 200),
           email: email.trim().toLowerCase().substring(0, 255),
           statut,
           niveauEtude: statut === "etudiant" ? niveauEtude : null,
           conferences,
           atelier,
-        },
+        }),
       });
 
-      // FunctionsHttpError: surface the JSON error message from the edge function
-      if (fnError) {
-        let message = "Une erreur s'est produite. Veuillez réessayer.";
-        try {
-          const ctx = (fnError as { context?: Response }).context;
-          if (ctx) {
-            const body = await ctx.clone().json();
-            if (body?.error) message = body.error;
-          }
-        } catch { /* ignore */ }
-        setError(message);
-        return;
-      }
+      const payload = await res.json().catch(() => ({} as { error?: string; success?: boolean }));
 
-      if (data && (data as { error?: string }).error) {
-        setError((data as { error: string }).error);
+      if (!res.ok || payload?.error) {
+        setError(payload?.error || "Une erreur s'est produite. Veuillez réessayer.");
         return;
       }
 
