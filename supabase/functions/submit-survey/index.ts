@@ -66,7 +66,7 @@ serve(async (req) => {
   const headers = getCorsHeaders(req);
 
   try {
-    const { nomPrenom, email, statut, niveauEtude, conferences, atelier } = await req.json();
+    const { nomPrenom, email, statut, niveauEtude, conferences, atelier, deviceId } = await req.json();
 
     // Validation
     if (typeof nomPrenom !== "string" || nomPrenom.trim().length === 0 || nomPrenom.length > 200) {
