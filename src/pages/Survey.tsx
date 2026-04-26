@@ -11,7 +11,7 @@ type Niveau = "1ere" | "2eme" | "3eme";
 type Conference = "confA" | "confB" | "confC" | "confD" | "tableRonde";
 type Atelier = "atelier1" | "atelier2" | "atelier3" | "atelier4";
 
-const DEFAULT_ATELIER_CAP = 20;
+const DEFAULT_ATELIER_CAP = 25;
 const DEVICE_ID_KEY = "wlc_survey_device_id";
 
 const getDeviceId = (): string => {
