@@ -192,15 +192,38 @@ const Survey = () => {
     }
   };
 
+  const fetchCap = async () => {
+    try {
+      const { data, error } = await (supabase as any)
+        .from("survey_settings")
+        .select("value")
+        .eq("key", "atelier_cap")
+        .maybeSingle();
+      if (error) {
+        console.error("Erreur de chargement de la capacité:", error);
+        return;
+      }
+      const v = data?.value;
+      if (typeof v === "number" && v > 0) setAtelierCap(v);
+    } catch (err) {
+      console.error("Impossible de récupérer la capacité:", err);
+    }
+  };
+
   useEffect(() => {
     fetchCounts();
-    // Live updates via Supabase Realtime — instant for inserts AND admin resets
+    fetchCap();
     const channel = supabase
       .channel("survey-counts")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "survey_submissions" },
         () => fetchCounts()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "survey_settings" },
+        () => fetchCap()
       )
       .subscribe();
     return () => {
