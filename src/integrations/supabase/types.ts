@@ -19,6 +19,7 @@ export type Database = {
           atelier: string
           conferences: string[]
           created_at: string
+          device_id: string | null
           email: string
           id: string
           niveau_etude: string | null
@@ -29,6 +30,7 @@ export type Database = {
           atelier: string
           conferences?: string[]
           created_at?: string
+          device_id?: string | null
           email: string
           id?: string
           niveau_etude?: string | null
@@ -39,6 +41,7 @@ export type Database = {
           atelier?: string
           conferences?: string[]
           created_at?: string
+          device_id?: string | null
           email?: string
           id?: string
           niveau_etude?: string | null
@@ -52,17 +55,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      register_submission: {
-        Args: {
-          p_atelier: string
-          p_conferences: string[]
-          p_email: string
-          p_niveau_etude: string
-          p_nom_prenom: string
-          p_statut: string
-        }
-        Returns: Json
-      }
+      register_submission:
+        | {
+            Args: {
+              p_atelier: string
+              p_conferences: string[]
+              p_email: string
+              p_niveau_etude: string
+              p_nom_prenom: string
+              p_statut: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_atelier: string
+              p_conferences: string[]
+              p_device_id?: string
+              p_email: string
+              p_niveau_etude: string
+              p_nom_prenom: string
+              p_statut: string
+            }
+            Returns: Json
+          }
     }
     Enums: {
       [_ in never]: never
