@@ -118,7 +118,7 @@ serve(async (req) => {
     if (!result?.success) {
       if (result?.error === "atelier_full") {
         return new Response(
-          JSON.stringify({ error: "Cet atelier est complet (20/20). Veuillez en choisir un autre." }),
+          JSON.stringify({ error: "Cet atelier est complet (25/25). Veuillez en choisir un autre." }),
           { status: 409, headers }
         );
       }
