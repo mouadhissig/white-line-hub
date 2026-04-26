@@ -97,23 +97,19 @@ const Survey = () => {
 
   const fetchCounts = async () => {
     try {
-      const res = await fetch(`${WEBHOOK_URL}?action=counts`);
-      if (!res.ok) {
-        console.error("Erreur HTTP lors du chargement des compteurs:", res.status);
+      const { data, error } = await supabase
+        .from("survey_submissions")
+        .select("atelier");
+      if (error) {
+        console.error("Erreur de chargement des compteurs:", error);
         return;
       }
-      const json = await res.json();
-      if (!json.success || !json.counts) {
-        console.error("Réponse inattendue du webhook:", json);
-        return;
-      }
-      const { counts: c, cap } = json as { success: boolean; cap?: number; counts: Record<string, number> };
       const next: Record<Atelier, number> = { atelier1: 0, atelier2: 0, atelier3: 0, atelier4: 0 };
-      for (const a of Object.keys(next) as Atelier[]) {
-        if (typeof c[a] === "number") next[a] = c[a];
+      for (const row of data ?? []) {
+        const a = row.atelier as Atelier;
+        if (a in next) next[a]++;
       }
       setCounts(next);
-      if (typeof cap === "number") setAtelierCap(cap);
     } catch (err) {
       console.error("Impossible de récupérer les compteurs:", err);
     }
@@ -121,8 +117,18 @@ const Survey = () => {
 
   useEffect(() => {
     fetchCounts();
-    const intervalId = setInterval(fetchCounts, 10000);
-    return () => clearInterval(intervalId);
+    // Live updates via Supabase Realtime — instant for inserts AND admin resets
+    const channel = supabase
+      .channel("survey-counts")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "survey_submissions" },
+        () => fetchCounts()
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const toggleConference = (c: Conference) => {
@@ -161,27 +167,37 @@ const Survey = () => {
 
     setIsSubmitting(true);
     try {
-      const atelierObj = ATELIERS.find((a) => a.id === atelier);
-      await fetch(WEBHOOK_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain" },
-        body: JSON.stringify({
-          date: new Date().toISOString(),
+      const { data, error: fnError } = await supabase.functions.invoke("submit-survey", {
+        body: {
           nomPrenom: nomPrenom.trim().substring(0, 200),
           email: email.trim().toLowerCase().substring(0, 255),
           statut,
-          niveauEtude: statut === "etudiant" ? niveauEtude : "",
-          conferences: conferences.join(", "),
-          atelierId: atelier,
-          atelierLabel: atelierObj?.label ?? atelier,
-          atelier: atelier,
-        }),
+          niveauEtude: statut === "etudiant" ? niveauEtude : null,
+          conferences,
+          atelier,
+        },
       });
 
+      // FunctionsHttpError: surface the JSON error message from the edge function
+      if (fnError) {
+        let message = "Une erreur s'est produite. Veuillez réessayer.";
+        try {
+          const ctx = (fnError as { context?: Response }).context;
+          if (ctx) {
+            const body = await ctx.clone().json();
+            if (body?.error) message = body.error;
+          }
+        } catch { /* ignore */ }
+        setError(message);
+        return;
+      }
+
+      if (data && (data as { error?: string }).error) {
+        setError((data as { error: string }).error);
+        return;
+      }
+
       setSubmitted(true);
-      // Small delay to allow the Apps Script backend to finish writing before re-fetching counts
-      setTimeout(fetchCounts, 800);
     } catch (err) {
       console.error("Erreur lors de la soumission:", err);
       setError("Une erreur réseau s'est produite. Veuillez vérifier votre connexion et réessayer.");
