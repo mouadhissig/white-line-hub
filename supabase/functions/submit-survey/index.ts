@@ -66,7 +66,7 @@ serve(async (req) => {
   const headers = getCorsHeaders(req);
 
   try {
-    const { nomPrenom, email, statut, niveauEtude, conferences, atelier } = await req.json();
+    const { nomPrenom, email, statut, niveauEtude, conferences, atelier, deviceId } = await req.json();
 
     // Validation
     if (typeof nomPrenom !== "string" || nomPrenom.trim().length === 0 || nomPrenom.length > 200) {
@@ -98,6 +98,8 @@ serve(async (req) => {
     );
 
     // Atomic registration with capacity check
+    const cleanDeviceId = typeof deviceId === "string" ? deviceId.trim().substring(0, 100) : null;
+
     const { data: result, error: rpcError } = await supabase.rpc("register_submission", {
       p_nom_prenom: cleanNomPrenom,
       p_email: cleanEmail,
@@ -105,6 +107,7 @@ serve(async (req) => {
       p_niveau_etude: cleanNiveau,
       p_conferences: conferences,
       p_atelier: atelier,
+      p_device_id: cleanDeviceId,
     });
 
     if (rpcError) {
@@ -122,6 +125,12 @@ serve(async (req) => {
       if (result?.error === "duplicate_email") {
         return new Response(
           JSON.stringify({ error: "Vous avez déjà soumis votre inscription avec cet e-mail." }),
+          { status: 409, headers }
+        );
+      }
+      if (result?.error === "duplicate_device") {
+        return new Response(
+          JSON.stringify({ error: "Une inscription a déjà été soumise depuis cet appareil." }),
           { status: 409, headers }
         );
       }
