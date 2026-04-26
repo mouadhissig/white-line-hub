@@ -183,6 +183,7 @@ const Survey = () => {
           niveauEtude: statut === "etudiant" ? niveauEtude : null,
           conferences,
           atelier,
+          deviceId: getDeviceId(),
         }),
       });
 
