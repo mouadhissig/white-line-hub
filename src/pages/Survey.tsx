@@ -332,7 +332,7 @@ const Survey = () => {
       <main className="pt-28 pb-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         <MandalaDecor theme="light" variant="b" />
         <div className="max-w-2xl mx-auto relative z-10">
-          {isAdmin && <AdminPanel />}
+          {isAdmin && <AdminPanel currentCap={atelierCap} />}
 
           <div className="text-center mb-12">
             <h1 className="text-3xl sm:text-4xl font-display tracking-wider mb-4">
