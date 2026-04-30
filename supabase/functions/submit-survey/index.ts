@@ -106,7 +106,7 @@ serve(async (req) => {
       p_statut: statut,
       p_niveau_etude: cleanNiveau,
       p_conferences: conferences,
-      p_atelier: atelier,
+      p_atelier: atelier || null,
       p_device_id: cleanDeviceId,
     });
 
