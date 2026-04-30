@@ -252,15 +252,11 @@ const Survey = () => {
       setError("Veuillez sélectionner votre niveau d'étude.");
       return;
     }
-    if (!atelier) {
-      setError("Veuillez sélectionner un atelier.");
-      return;
-    }
-    if (counts[atelier] >= atelierCap) {
+    if (atelier && counts[atelier] >= atelierCap) {
       setError("Cet atelier est complet. Veuillez en choisir un autre.");
       return;
     }
-    if (!confirmAtelier) {
+    if (atelier && !confirmAtelier) {
       setError("Veuillez confirmer votre choix d'atelier.");
       return;
     }
