@@ -545,7 +545,7 @@ const Survey = () => {
                             : "border-foreground/40 text-foreground/70"
                         }`}
                       >
-                        {isFull ? "COMPLET" : `${count}/${atelierCap}`}
+                        {isFull ? "COMPLET" : `${count}/${cap}`}
                       </span>
                     </label>
                   );
