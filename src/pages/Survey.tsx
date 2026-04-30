@@ -42,16 +42,32 @@ const CONFERENCES: { id: Conference; label: string }[] = [
   { id: "tableRonde", label: "Table Ronde – « Discussions Interactives avec les Experts » (11h30)" },
 ];
 
-const AdminPanel = ({ currentCap }: { currentCap: number }) => {
+const AdminPanel = ({
+  caps,
+  globalCap,
+}: {
+  caps: Record<Atelier, number>;
+  globalCap: number;
+}) => {
   const [resetKey, setResetKey] = useState("");
   const [isResetting, setIsResetting] = useState(false);
   const [capKey, setCapKey] = useState("");
-  const [capValue, setCapValue] = useState<string>(String(currentCap));
-  const [isSavingCap, setIsSavingCap] = useState(false);
+  const [capValues, setCapValues] = useState<Record<Atelier, string>>({
+    atelier1: String(caps.atelier1),
+    atelier2: String(caps.atelier2),
+    atelier3: String(caps.atelier3),
+    atelier4: String(caps.atelier4),
+  });
+  const [isSavingCaps, setIsSavingCaps] = useState(false);
 
   useEffect(() => {
-    setCapValue(String(currentCap));
-  }, [currentCap]);
+    setCapValues({
+      atelier1: String(caps.atelier1),
+      atelier2: String(caps.atelier2),
+      atelier3: String(caps.atelier3),
+      atelier4: String(caps.atelier4),
+    });
+  }, [caps.atelier1, caps.atelier2, caps.atelier3, caps.atelier4]);
 
   const handleReset = async () => {
     if (!resetKey) return;
@@ -68,24 +84,32 @@ const AdminPanel = ({ currentCap }: { currentCap: number }) => {
     }
   };
 
-  const handleSaveCap = async () => {
-    const cap = Number(capValue);
-    if (!capKey || !Number.isInteger(cap) || cap < 1 || cap > 1000) {
-      toast({ title: "Erreur", description: "Capacité invalide (1-1000) ou mot de passe manquant.", variant: "destructive" });
+  const handleSaveCaps = async () => {
+    if (!capKey) {
+      toast({ title: "Erreur", description: "Mot de passe manquant.", variant: "destructive" });
       return;
     }
-    setIsSavingCap(true);
+    const atelierCaps: Record<string, number> = {};
+    for (const a of ["atelier1", "atelier2", "atelier3", "atelier4"] as Atelier[]) {
+      const n = Number(capValues[a]);
+      if (!Number.isInteger(n) || n < 1 || n > 1000) {
+        toast({ title: "Erreur", description: `Capacité invalide pour ${a} (1-1000).`, variant: "destructive" });
+        return;
+      }
+      atelierCaps[a] = n;
+    }
+    setIsSavingCaps(true);
     try {
       const { error } = await supabase.functions.invoke("update-survey-settings", {
-        body: { adminKey: capKey, atelierCap: cap },
+        body: { adminKey: capKey, atelierCaps },
       });
       if (error) throw error;
-      toast({ title: "Succès", description: `Capacité mise à jour : ${cap} par atelier.` });
+      toast({ title: "Succès", description: "Capacités mises à jour." });
       setCapKey("");
     } catch {
       toast({ title: "Erreur", description: "Mot de passe incorrect ou erreur serveur.", variant: "destructive" });
     } finally {
-      setIsSavingCap(false);
+      setIsSavingCaps(false);
     }
   };
 
@@ -116,20 +140,30 @@ const AdminPanel = ({ currentCap }: { currentCap: number }) => {
         </div>
       </div>
 
-      <div className="space-y-2 pt-2 border-t border-destructive/30">
+      <div className="space-y-3 pt-2 border-t border-destructive/30">
         <p className="text-xs uppercase tracking-wider text-destructive/80">
-          Capacité par atelier (actuelle : {currentCap})
+          Capacité par atelier (défaut global : {globalCap})
         </p>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="number"
-            min={1}
-            max={1000}
-            value={capValue}
-            onChange={(e) => setCapValue(e.target.value)}
-            placeholder="Capacité"
-            className="w-full sm:w-28 px-4 py-2 border-2 border-foreground bg-transparent focus:outline-none focus:border-foreground/50 transition-colors text-sm"
-          />
+        <div className="space-y-2">
+          {ATELIERS.map((a) => (
+            <div key={a.id} className="flex items-center gap-3">
+              <label className="flex-1 text-sm font-medium truncate" title={a.label}>
+                {a.label}
+              </label>
+              <input
+                type="number"
+                min={1}
+                max={1000}
+                value={capValues[a.id]}
+                onChange={(e) =>
+                  setCapValues((prev) => ({ ...prev, [a.id]: e.target.value }))
+                }
+                className="w-24 px-3 py-2 border-2 border-foreground bg-transparent focus:outline-none focus:border-foreground/50 transition-colors text-sm"
+              />
+            </div>
+          ))}
+        </div>
+        <div className="flex flex-col sm:flex-row gap-3 pt-2">
           <input
             type="password"
             value={capKey}
@@ -138,11 +172,11 @@ const AdminPanel = ({ currentCap }: { currentCap: number }) => {
             className="flex-1 px-4 py-2 border-2 border-foreground bg-transparent focus:outline-none focus:border-foreground/50 transition-colors text-sm"
           />
           <button
-            onClick={handleSaveCap}
-            disabled={isSavingCap || !capKey}
+            onClick={handleSaveCaps}
+            disabled={isSavingCaps || !capKey}
             className="px-4 py-2 bg-foreground text-background text-sm uppercase tracking-wider hover:bg-foreground/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSavingCap ? "..." : "Enregistrer"}
+            {isSavingCaps ? "..." : "Enregistrer"}
           </button>
         </div>
       </div>
@@ -168,6 +202,12 @@ const Survey = () => {
 
   // Live counts per atelier
   const [atelierCap, setAtelierCap] = useState(DEFAULT_ATELIER_CAP);
+  const [atelierCaps, setAtelierCaps] = useState<Record<Atelier, number>>({
+    atelier1: DEFAULT_ATELIER_CAP,
+    atelier2: DEFAULT_ATELIER_CAP,
+    atelier3: DEFAULT_ATELIER_CAP,
+    atelier4: DEFAULT_ATELIER_CAP,
+  });
   const [counts, setCounts] = useState<Record<Atelier, number>>({
     atelier1: 0, atelier2: 0, atelier3: 0, atelier4: 0,
   });
@@ -196,15 +236,30 @@ const Survey = () => {
     try {
       const { data, error } = await (supabase as any)
         .from("survey_settings")
-        .select("value")
-        .eq("key", "atelier_cap")
-        .maybeSingle();
+        .select("key,value");
       if (error) {
         console.error("Erreur de chargement de la capacité:", error);
         return;
       }
-      const v = data?.value;
-      if (typeof v === "number" && v > 0) setAtelierCap(v);
+      let global = DEFAULT_ATELIER_CAP;
+      const perAtelier: Partial<Record<Atelier, number>> = {};
+      for (const row of (data ?? []) as { key: string; value: number }[]) {
+        if (row.key === "atelier_cap" && typeof row.value === "number" && row.value > 0) {
+          global = row.value;
+        } else if (row.key.startsWith("atelier_cap_")) {
+          const a = row.key.replace("atelier_cap_", "") as Atelier;
+          if (["atelier1", "atelier2", "atelier3", "atelier4"].includes(a) && typeof row.value === "number" && row.value > 0) {
+            perAtelier[a] = row.value;
+          }
+        }
+      }
+      setAtelierCap(global);
+      setAtelierCaps({
+        atelier1: perAtelier.atelier1 ?? global,
+        atelier2: perAtelier.atelier2 ?? global,
+        atelier3: perAtelier.atelier3 ?? global,
+        atelier4: perAtelier.atelier4 ?? global,
+      });
     } catch (err) {
       console.error("Impossible de récupérer la capacité:", err);
     }
@@ -252,7 +307,7 @@ const Survey = () => {
       setError("Veuillez sélectionner votre niveau d'étude.");
       return;
     }
-    if (atelier && counts[atelier] >= atelierCap) {
+    if (atelier && counts[atelier] >= atelierCaps[atelier]) {
       setError("Cet atelier est complet. Veuillez en choisir un autre.");
       return;
     }
@@ -328,7 +383,7 @@ const Survey = () => {
       <main className="pt-28 pb-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
         <MandalaDecor theme="light" variant="b" />
         <div className="max-w-2xl mx-auto relative z-10">
-          {isAdmin && <AdminPanel currentCap={atelierCap} />}
+          {isAdmin && <AdminPanel caps={atelierCaps} globalCap={atelierCap} />}
 
           <div className="text-center mb-12">
             <h1 className="text-3xl sm:text-4xl font-display tracking-wider mb-4">
@@ -461,7 +516,8 @@ const Survey = () => {
               <div className="space-y-3">
                 {ATELIERS.map((a) => {
                   const count = counts[a.id];
-                  const isFull = count >= atelierCap;
+                  const cap = atelierCaps[a.id];
+                  const isFull = count >= cap;
                   return (
                     <label
                       key={a.id}
@@ -489,7 +545,7 @@ const Survey = () => {
                             : "border-foreground/40 text-foreground/70"
                         }`}
                       >
-                        {isFull ? "COMPLET" : `${count}/${atelierCap}`}
+                        {isFull ? "COMPLET" : `${count}/${cap}`}
                       </span>
                     </label>
                   );
