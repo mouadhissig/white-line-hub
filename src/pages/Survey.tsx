@@ -236,15 +236,30 @@ const Survey = () => {
     try {
       const { data, error } = await (supabase as any)
         .from("survey_settings")
-        .select("value")
-        .eq("key", "atelier_cap")
-        .maybeSingle();
+        .select("key,value");
       if (error) {
         console.error("Erreur de chargement de la capacité:", error);
         return;
       }
-      const v = data?.value;
-      if (typeof v === "number" && v > 0) setAtelierCap(v);
+      let global = DEFAULT_ATELIER_CAP;
+      const perAtelier: Partial<Record<Atelier, number>> = {};
+      for (const row of (data ?? []) as { key: string; value: number }[]) {
+        if (row.key === "atelier_cap" && typeof row.value === "number" && row.value > 0) {
+          global = row.value;
+        } else if (row.key.startsWith("atelier_cap_")) {
+          const a = row.key.replace("atelier_cap_", "") as Atelier;
+          if (["atelier1", "atelier2", "atelier3", "atelier4"].includes(a) && typeof row.value === "number" && row.value > 0) {
+            perAtelier[a] = row.value;
+          }
+        }
+      }
+      setAtelierCap(global);
+      setAtelierCaps({
+        atelier1: perAtelier.atelier1 ?? global,
+        atelier2: perAtelier.atelier2 ?? global,
+        atelier3: perAtelier.atelier3 ?? global,
+        atelier4: perAtelier.atelier4 ?? global,
+      });
     } catch (err) {
       console.error("Impossible de récupérer la capacité:", err);
     }
