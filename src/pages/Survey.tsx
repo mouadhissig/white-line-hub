@@ -202,6 +202,12 @@ const Survey = () => {
 
   // Live counts per atelier
   const [atelierCap, setAtelierCap] = useState(DEFAULT_ATELIER_CAP);
+  const [atelierCaps, setAtelierCaps] = useState<Record<Atelier, number>>({
+    atelier1: DEFAULT_ATELIER_CAP,
+    atelier2: DEFAULT_ATELIER_CAP,
+    atelier3: DEFAULT_ATELIER_CAP,
+    atelier4: DEFAULT_ATELIER_CAP,
+  });
   const [counts, setCounts] = useState<Record<Atelier, number>>({
     atelier1: 0, atelier2: 0, atelier3: 0, atelier4: 0,
   });
