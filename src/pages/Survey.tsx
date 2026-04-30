@@ -516,7 +516,8 @@ const Survey = () => {
               <div className="space-y-3">
                 {ATELIERS.map((a) => {
                   const count = counts[a.id];
-                  const isFull = count >= atelierCap;
+                  const cap = atelierCaps[a.id];
+                  const isFull = count >= cap;
                   return (
                     <label
                       key={a.id}
