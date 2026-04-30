@@ -84,7 +84,7 @@ serve(async (req) => {
     if (!Array.isArray(conferences) || !conferences.every((c: string) => VALID_CONFERENCES.includes(c))) {
       return new Response(JSON.stringify({ error: "Conférences invalides." }), { status: 400, headers });
     }
-    if (!VALID_ATELIERS.includes(atelier)) {
+    if (atelier !== "" && atelier != null && !VALID_ATELIERS.includes(atelier)) {
       return new Response(JSON.stringify({ error: "Atelier invalide." }), { status: 400, headers });
     }
 
@@ -106,7 +106,7 @@ serve(async (req) => {
       p_statut: statut,
       p_niveau_etude: cleanNiveau,
       p_conferences: conferences,
-      p_atelier: atelier,
+      p_atelier: atelier || null,
       p_device_id: cleanDeviceId,
     });
 
@@ -150,7 +150,7 @@ serve(async (req) => {
             statut: STATUT_LABELS[statut],
             niveauEtude: cleanNiveau ? NIVEAU_LABELS[cleanNiveau] : "",
             conferences: conferences.map((c: string) => CONFERENCE_LABELS[c]).join(", "),
-            atelier: ATELIER_LABELS[atelier],
+            atelier: atelier ? ATELIER_LABELS[atelier] : "",
             date: new Date().toISOString(),
           }),
         });
