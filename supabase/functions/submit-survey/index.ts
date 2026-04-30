@@ -84,7 +84,7 @@ serve(async (req) => {
     if (!Array.isArray(conferences) || !conferences.every((c: string) => VALID_CONFERENCES.includes(c))) {
       return new Response(JSON.stringify({ error: "Conférences invalides." }), { status: 400, headers });
     }
-    if (!VALID_ATELIERS.includes(atelier)) {
+    if (atelier !== "" && atelier != null && !VALID_ATELIERS.includes(atelier)) {
       return new Response(JSON.stringify({ error: "Atelier invalide." }), { status: 400, headers });
     }
 
