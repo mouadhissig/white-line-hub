@@ -307,7 +307,7 @@ const Survey = () => {
       setError("Veuillez sélectionner votre niveau d'étude.");
       return;
     }
-    if (atelier && counts[atelier] >= atelierCap) {
+    if (atelier && counts[atelier] >= atelierCaps[atelier]) {
       setError("Cet atelier est complet. Veuillez en choisir un autre.");
       return;
     }
