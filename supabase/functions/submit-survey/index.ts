@@ -150,7 +150,7 @@ serve(async (req) => {
             statut: STATUT_LABELS[statut],
             niveauEtude: cleanNiveau ? NIVEAU_LABELS[cleanNiveau] : "",
             conferences: conferences.map((c: string) => CONFERENCE_LABELS[c]).join(", "),
-            atelier: ATELIER_LABELS[atelier],
+            atelier: atelier ? ATELIER_LABELS[atelier] : "",
             date: new Date().toISOString(),
           }),
         });
